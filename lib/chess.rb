@@ -155,16 +155,10 @@ class Player
       :knight_light => Knight.new(color),
       :knight_dark => Knight.new(color, :dark),
       :rook_light => Rook.new(color),
-      :rook_dark => Rook.new(color, :dark),
-      :pawn_a => Pawn.new(color, :a),
-      :pawn_b => Pawn.new(color, :b),
-      :pawn_c => Pawn.new(color, :c),
-      :pawn_d => Pawn.new(color, :d),
-      :pawn_e => Pawn.new(color, :e),
-      :pawn_f => Pawn.new(color, :f),
-      :pawn_g => Pawn.new(color, :g),
-      :pawn_h => Pawn.new(color, :h)
+      :rook_dark => Rook.new(color, :dark)
     }
+      
+      ('a'..'h').each { |l| @pieces["pawn_#{l.to_sym}"] = Pawn.new(color, l.to_sym) }
   end
   
   def place(piece, board)
@@ -190,62 +184,18 @@ class Game
         player.place(piece, board)
       end
     end
-    
-    #board.visualize
   end
 end
     
     
     
 
-#ovsjah = Player.new('Ovsjah', :white)
-#budda = Player.new('Weasel', :black)
-#game = Game.new
-#game.setup
-#p ovsjah
-#p "-----------------------------------------------------"
-#p budda
+ovsjah = Player.new('Ovsjah', :white)
+weasel = Player.new('Weasel', :black)
+game = Game.new
 
-#board = Board.new
-#p board.hash_map
-#puts board.colorize("board", 28)
-#board.grid[0][0][1] = "\u2656"
-#board.grid[2][2][1] = "\u2658"
-#board.grid[0][2][1] = "\u2657"
-#board.grid[0][3][1] = "\u2655"
-#board.grid[0][4][1] = "\u2654"
+game.setup
+game.board.visualize
 
-#board.visualize
-
-#board.grid[0][5][1] = "\u2657"
-#board.grid[0][6][1] = "\u2658"
-#board.grid[0][7][1] = "\u2656"
-
-#board.grid[1][0][1] = "\u2659"
-#board.grid[1][1][1] = "\u2659"
-#board.grid[1][2][1] = "\u2659"
-#board.grid[1][3][1] = "\u2659"
-#board.grid[1][4][1] = "\u2659"
-#board.grid[1][5][1] = "\u2659"
-#board.grid[1][6][1] = "\u2659"
-#board.grid[1][7][1] = "\u2659"
-
-#board.grid[7][0][1] = "\u265c"
-#board.grid[7][1][1] = "\u265e"
-#board.grid[7][2][1] = "\u265d"
-#board.grid[7][3][1] = "\u265b"
-#board.grid[7][4][1] = "\u265a"
-#board.grid[7][5][1] = "\u265d"
-#board.grid[7][6][1] = "\u265e"
-#board.grid[7][7][1] = "\u265c"
-
-#board.grid[6][0][1] = "\u265f"
-#board.grid[6][1][1] = "\u265f"
-#board.grid[6][2][1] = "\u265f"
-#board.grid[6][3][1] = "\u265f"
-#board.grid[6][4][1] = "\u265f"
-#board.grid[6][5][1] = "\u265f"
-#board.grid[6][6][1] = "\u265f"
-#board.grid[6][7][1] = "\u265f"
-
-#board.visualize
+p ovsjah
+#p weasel
