@@ -190,8 +190,6 @@ class Game
         player.place(piece, board)
       end
     end
-    
-    #board.visualize
   end
 end
     
@@ -202,50 +200,4 @@ end
 #budda = Player.new('Weasel', :black)
 #game = Game.new
 #game.setup
-#p ovsjah
-#p "-----------------------------------------------------"
-#p budda
-
-#board = Board.new
-#p board.hash_map
-#puts board.colorize("board", 28)
-#board.grid[0][0][1] = "\u2656"
-#board.grid[2][2][1] = "\u2658"
-#board.grid[0][2][1] = "\u2657"
-#board.grid[0][3][1] = "\u2655"
-#board.grid[0][4][1] = "\u2654"
-
-#board.visualize
-
-#board.grid[0][5][1] = "\u2657"
-#board.grid[0][6][1] = "\u2658"
-#board.grid[0][7][1] = "\u2656"
-
-#board.grid[1][0][1] = "\u2659"
-#board.grid[1][1][1] = "\u2659"
-#board.grid[1][2][1] = "\u2659"
-#board.grid[1][3][1] = "\u2659"
-#board.grid[1][4][1] = "\u2659"
-#board.grid[1][5][1] = "\u2659"
-#board.grid[1][6][1] = "\u2659"
-#board.grid[1][7][1] = "\u2659"
-
-#board.grid[7][0][1] = "\u265c"
-#board.grid[7][1][1] = "\u265e"
-#board.grid[7][2][1] = "\u265d"
-#board.grid[7][3][1] = "\u265b"
-#board.grid[7][4][1] = "\u265a"
-#board.grid[7][5][1] = "\u265d"
-#board.grid[7][6][1] = "\u265e"
-#board.grid[7][7][1] = "\u265c"
-
-#board.grid[6][0][1] = "\u265f"
-#board.grid[6][1][1] = "\u265f"
-#board.grid[6][2][1] = "\u265f"
-#board.grid[6][3][1] = "\u265f"
-#board.grid[6][4][1] = "\u265f"
-#board.grid[6][5][1] = "\u265f"
-#board.grid[6][6][1] = "\u265f"
-#board.grid[6][7][1] = "\u265f"
-
-#board.visualize
+#game.board.visualize
