@@ -189,13 +189,12 @@ end
     
     
     
+#ovsjah = Player.new('Ovsjah', :white)
+#weasel = Player.new('Weasel', :black)
+#game = Game.new
 
-ovsjah = Player.new('Ovsjah', :white)
-weasel = Player.new('Weasel', :black)
-game = Game.new
+#game.setup
+#game.board.visualize
 
-game.setup
-game.board.visualize
-
-p ovsjah
+#p ovsjah
 #p weasel
