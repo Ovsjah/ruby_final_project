@@ -197,7 +197,7 @@ end
     
 
 #ovsjah = Player.new('Ovsjah', :white)
-#budda = Player.new('Weasel', :black)
+#weasel = Player.new('Weasel', :black)
 #game = Game.new
 #game.setup
 #game.board.visualize
