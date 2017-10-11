@@ -53,7 +53,7 @@ end
 describe King do
 
   before(:all) do
-    @king = King.new(:white)
+    @king = King.new(:white, 0)
   end
   
   describe '#new' do
@@ -79,7 +79,7 @@ end
 describe Queen do
 
   before(:all) do
-    @queen = Queen.new(:black)
+    @queen = Queen.new(:black, 0)
   end
   
   describe '#new' do
@@ -105,7 +105,7 @@ end
 describe Bishop do
 
   before(:all) do
-    @bishop = Bishop.new(:white, :dark)
+    @bishop = Bishop.new(:white, 0)
   end
   
   describe '#new' do
@@ -131,7 +131,7 @@ end
 describe Knight do
 
   before(:all) do
-    @knight = Knight.new(:black)
+    @knight = Knight.new(:black, 1)
   end
   
   describe '#new' do
@@ -157,7 +157,7 @@ end
 describe Rook do
 
   before(:all) do
-    @rook = Rook.new(:white, :dark)
+    @rook = Rook.new(:white, 0)
   end
   
   describe '#new' do
@@ -183,7 +183,7 @@ end
 describe Pawn do
 
   before(:all) do
-    @pawn = Pawn.new(:black, :e)
+    @pawn = Pawn.new(:black, 4)
   end
   
   describe '#new' do
@@ -211,7 +211,7 @@ describe Player do
   before(:all) do
     @player_white = Player.new('Ovsjah', :white)
     @board = Board.new
-    @piece = @player_white.pieces[:king]
+    @piece = @player_white.pieces[:king_e1]
   end
   
   describe '#new' do
@@ -235,7 +235,7 @@ describe Player do
   describe '#pieces' do
     it "returns a hash of chess pieces" do
       expect(@player_white.pieces.class).to eq(Hash)
-      expect(@player_white.pieces[:rook_light].char).to eq('♖')
+      expect(@player_white.pieces[:rook_a1].char).to eq('♖')
     end
   end
   
@@ -264,14 +264,14 @@ describe Game do
   describe '#player_white' do
     it "creates a white player" do
       expect(@game.player_white.color).to eq(:white)
-      expect(@game.player_white.pieces[:king].char).to eq('♔')
+      expect(@game.player_white.pieces[:king_e1].char).to eq('♔')
     end
   end
   
   describe '#player_black' do
     it "creates a black player" do
       expect(@game.player_black.color).to eq(:black)
-      expect(@game.player_black.pieces[:king].char).to eq('♚')
+      expect(@game.player_black.pieces[:king_e8].char).to eq('♚')
     end
   end
   
