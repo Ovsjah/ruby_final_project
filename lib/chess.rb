@@ -57,42 +57,84 @@ class Pawn
 
   CHARS = {
     :white => [:a2, :b2, :c2, :d2, :e2, :f2, :g2, :h2, "\u2659"],
-    :black => [:a7, :b7, :c7, :d7, :e7, :f7, :g7, :h7, "\u265F"]
+    :black => [:a7, :b7, :c7, :d7, :e7, :f7, :g7, :h7, "\u265f"]
   }
         
   attr_accessor :char, :position, :possible_moves
   
-  def initialize(color, type) 
+  def initialize(color, type)
+
     @position = self.class::CHARS[color][type]      
     @char = self.class::CHARS[color][-1]
-    @possible_moves = []
+    @possible_moves ||= update_moves 
   end
+  
+  def update_moves
+    a = position[0]
+    b = position[1].to_i
+    
+    @possible_moves = 
+     case
+      when char == '♟' && position[1] == "7"
+        ["#{a}#{b - 1}".to_sym, "#{a}#{b - 2}".to_sym]
+      when char == '♙' && position[1] == "2"
+        ["#{a}#{(b + 1)}".to_sym, "#{a}#{(b + 2)}".to_sym]
+      when char == '♟'
+        ["#{a}#{b - 1}".to_sym]
+      when char == '♙'
+        ["#{a}#{(b + 1)}".to_sym]
+      end
+    
+  end
+  
+  def taking
+    a = position[0]
+    b = position[1].to_i
+    prev = (a.ord - 1).chr       
+    
+    targets = 
+      case
+      when char == '♟' && position[0] == 'a'
+        ["#{a.next}#{b - 1}".to_sym]
+      when char == '♟' && position[0] == 'h'
+        ["#{prev}#{b - 1}".to_sym]
+      when char == '♙' && position[0] == 'a'
+        ["#{a.next}#{b + 1}".to_sym]
+      when char == '♙' && position[0] == 'h'
+        ["#{prev}#{b + 1}".to_sym]
+      when char == '♟'
+        ["#{prev}#{b - 1}".to_sym, "#{a.next}#{b - 1}".to_sym]
+      when char == '♙'
+        ["#{prev}#{b + 1}".to_sym, "#{a.next}#{b + 1}".to_sym]
+      end
+      
+  end
+  
 end
 
 
-
 class King < Pawn
-  CHARS = {:white => [:e1, "\u2654"], :black => [:e8, "\u265A"]}
+  CHARS = {:white => [:e1, "\u2654"], :black => [:e8, "\u265a"]}
 end
 
 
 class Queen < Pawn
-  CHARS = {:white => [:d1, "\u2655"], :black => [:d8, "\u265B"]}
+  CHARS = {:white => [:d1, "\u2655"], :black => [:d8, "\u265b"]}
 end
 
 
 class Bishop < Pawn
-  CHARS = {:white => [:c1, :f1, "\u2657"], :black => [:f8, :c8, "\u265D"]}
+  CHARS = {:white => [:c1, :f1, "\u2657"], :black => [:f8, :c8, "\u265d"]}
 end
 
 
 class Knight < Pawn
-  CHARS = {:white => [:g1, :b1, "\u2658"], :black => [:b8, :g8, "\u265E"]}
+  CHARS = {:white => [:g1, :b1, "\u2658"], :black => [:b8, :g8, "\u265e"]}
 end
 
 
 class Rook < Pawn
-  CHARS = {:white => [:a1, :h1, "\u2656"], :black => [:h8, :a8, "\u265C"]}
+  CHARS = {:white => [:a1, :h1, "\u2656"], :black => [:h8, :a8, "\u265c"]}
 end
 
 
@@ -128,6 +170,43 @@ class Player
     end
   end
   
+  def update_moves(board)
+    pieces.each do |_key, piece|
+      piece.update_moves
+      adjust(piece, board)
+    end
+  end
+  
+  def adjust(piece, board)
+    piece = pieces[piece] if piece.is_a? Symbol
+    
+    piece.possible_moves.delete_if { |move| board.hash_map[move].values[0] != "   " }
+    
+    piece.taking.each do |target|
+      
+      if ('a'..'f').include? board.hash_map[target].values[0][1].ord.to_s(16)[3]
+        piece.possible_moves << target
+      elsif (4..9).include? board.hash_map[target].values[0][1].ord.to_s(16)[3].to_i
+        piece.possible_moves << target
+      end
+      
+    end
+  end
+  
+  def move(start, finish, board)
+    piece = pieces.detect { |_key, piece| (piece.position == start) && (piece.possible_moves.include? finish) }[1]
+    
+    pick(piece, board)    
+    piece.position = finish    
+    place(piece, board)
+
+  end
+  
+  def pick(piece, board)
+    coord = board.hash_map[piece.position].keys[0]
+    board.grid[coord[0]][coord[1]][1] = ' '
+  end
+  
   def place(piece, board)
     coord = board.hash_map[piece.position].keys[0]
     board.grid[coord[0]][coord[1]][1] = piece.char
@@ -152,6 +231,29 @@ class Game
       end
     end
   end
+  
+  def play
+    setup
+    
+    loop do
+      
+      [player_white, player_black].each do |player|
+        puts "#{player.color} turn"
+        
+        player.update_moves(board)
+
+        board.visualize
+        
+        print '>> '
+        
+        move = gets.split(/\s/)
+        start, finish = move[0].to_sym, move[1].to_sym
+        
+        player.move(start, finish, board)
+      end
+    end
+  end
+    
 end
     
     
@@ -159,10 +261,7 @@ module Factory
   
   COMPONENTS = {
     :board => Board,
-    :player => Player
-  }
-  
-  PIECES = {
+    :player => Player,
     :pawn => Pawn,
     :king => King,
     :queen => Queen,
@@ -178,7 +277,7 @@ module Factory
     elsif component == :player
       COMPONENTS[component].new(options[:name], options[:color])
     else
-      PIECES[component].new(options[:color], options[:type])
+      COMPONENTS[component].new(options[:color], options[:type])
     end
     
   end
@@ -191,7 +290,19 @@ end
 #game = Game.new
 
 #game.setup
+#game.play
+#game.player_white.move(:d2, :d3, game.board)
+#game.player_black.move(:e7, :e5, game.board)
+#game.player_white.move(:f2, :f3, game.board)
+#game.player_white.move(:e2, :e3, game.board)
+#game.player_black.move(:e5, :e4, game.board)
+#game.player_white.adjust(:pawn_d2, game.board)
 #game.board.visualize
+
+#p game.player_black.pieces[:pawn_e7]
+#p game.player_white.pieces[:pawn_d2]
+#p game.player_white.pieces[:pawn_f2]
+
 #p game
 #p ovsjah
 #p weasel

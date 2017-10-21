@@ -183,24 +183,38 @@ end
 describe Pawn do
 
   before(:all) do
-    @pawn = Pawn.new(:black, 4)
+    @pawn_black = Pawn.new(:black, 4)
+    @pawn_white = Pawn.new(:white, 4) 
   end
   
   describe '#new' do
     it "returns a pawn object" do
-      expect(@pawn).to be_an_instance_of(Pawn)
+      expect(@pawn_black).to be_an_instance_of(Pawn)
     end
   end
   
   describe '#char' do
     it "returns '♟'" do
-      expect(@pawn.char).to eq('♟')
+      expect(@pawn_black.char).to eq('♟')
     end
   end
     
   describe '#position' do
     it "returns pawn's position" do
-      expect(@pawn.position).to eq(:e7)
+      expect(@pawn_black.position).to eq(:e7)
+    end
+  end
+  
+  describe '#taking' do
+    it "returns targets to be taken" do
+      expect(@pawn_black.taking).to eq([:d6, :f6])
+      expect(@pawn_white.taking).to eq([:d3, :f3])
+    end
+  end
+  
+  describe '#possible_moves' do
+    it "returns possible_moves" do
+      expect(@pawn_black.possible_moves).to eq([:e6, :e5])
     end
   end
 end
