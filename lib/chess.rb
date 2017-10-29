@@ -178,9 +178,9 @@ end
 class Player
   
   PIECES = [
-    :pawn, #:king,
-    #:queen, :bishop,
-    #:knight, :rook
+    :pawn, :king,
+    :queen, :bishop,
+    :knight, :rook
   ]
   
   attr_accessor :name, :color, :pieces

@@ -253,10 +253,16 @@ describe Player do
     end
   end
   
-  describe '#place' do
-    it "places a chess piece on the board" do
-      expect(@player_white.place(@piece, @board)).to eq('♔')
-      @board.visualize
+  describe '#get' do
+    it "returns a chess piece" do
+      expect(@player_white.get(:e2, :e4).char).to eq("♙")
+    end
+  end
+  
+  describe '#move' do
+    it "moves a chess piece and returns it" do
+      piece = @player_white.get(:e2, :e4)
+      expect(@player_white.move(piece, :e4).position).to eq(:e4)
     end
   end
 end
@@ -267,6 +273,9 @@ describe Game do
   before(:all) do
     @game = Game.new
     @board = @game.board
+    @player_white = @game.player_white
+    @player_black = @game.player_black
+    @piece = @player_black.get(:d7, :d5)
   end
   
   describe '#new' do
@@ -297,6 +306,44 @@ describe Game do
       expect(@board.hash_map[:d8]).to eq([7, 3] => " ♛ ")
       
       @board.visualize
+    end
+  end
+  
+  describe '#pick' do
+    it "removes the piece from the chess board" do
+      expect(@game.pick(@piece)).to eq(' ')
+    end
+  end
+  
+  describe '#place' do
+    it "places the piece on the right cell" do
+      expect(@game.place(@piece)).to eq('♟')
+    end
+  end
+  
+  describe '#remove' do
+    it "removes the piece from player's pieces hash" do
+      @piece.char = "♕"
+      @game.remove(@player_black, @piece)
+      expect(@player_black.pieces[:pawn_d7]).to eq(nil)
+    end
+  end
+  
+  describe '#add' do
+    it "adds the new piece to player's pieces hash" do
+      piece = Rook.new(:black, 0)
+      piece.position = :e1
+      @game.add(@player_black, piece)
+      expect(@player_black.pieces[:rook_e1].char).to eq('♜')
+    end
+  end
+  
+  describe '#update' do
+    it "updates player's moves" do
+      piece = @player_black.get(:f7, :f5)
+      @player_black.move(piece, :f5)
+      @game.update_moves(@player_black)
+      expect(piece.possible_moves).to eq([:f4])
     end
   end
 end
