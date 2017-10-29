@@ -60,13 +60,14 @@ class Pawn
     :black => [:a7, :b7, :c7, :d7, :e7, :f7, :g7, :h7, "\u265f"]
   }
         
-  attr_accessor :char, :position, :possible_moves
+  attr_accessor :char, :position, :prev_position, :passant, :possible_moves
   
   def initialize(color, type)
-
-    @position = self.class::CHARS[color][type]      
     @char = self.class::CHARS[color][-1]
-    @possible_moves ||= update_moves 
+    @position = self.class::CHARS[color][type]      
+    @prev_position = nil
+    @passant = []
+    @possible_moves = update_moves 
   end
   
   def update_moves
@@ -75,9 +76,9 @@ class Pawn
     
     @possible_moves = 
      case
-      when char == '♟' && position[1] == "7"
+      when char == '♟' && b == 7
         ["#{a}#{b - 1}".to_sym, "#{a}#{b - 2}".to_sym]
-      when char == '♙' && position[1] == "2"
+      when char == '♙' && b == 2
         ["#{a}#{(b + 1)}".to_sym, "#{a}#{(b + 2)}".to_sym]
       when char == '♟'
         ["#{a}#{b - 1}".to_sym]
@@ -94,13 +95,13 @@ class Pawn
     
     targets = 
       case
-      when char == '♟' && position[0] == 'a'
+      when char == '♟' && a == 'a'
         ["#{a.next}#{b - 1}".to_sym]
-      when char == '♟' && position[0] == 'h'
+      when char == '♟' && a == 'h'
         ["#{prev}#{b - 1}".to_sym]
-      when char == '♙' && position[0] == 'a'
+      when char == '♙' && a == 'a'
         ["#{a.next}#{b + 1}".to_sym]
-      when char == '♙' && position[0] == 'h'
+      when char == '♙' && a == 'h'
         ["#{prev}#{b + 1}".to_sym]
       when char == '♟'
         ["#{prev}#{b - 1}".to_sym, "#{a.next}#{b - 1}".to_sym]
@@ -108,6 +109,42 @@ class Pawn
         ["#{prev}#{b + 1}".to_sym, "#{a.next}#{b + 1}".to_sym]
       end
       
+  end
+  
+  def taking_en_passant
+    a = position[0]
+    b = position[1].to_i
+    prev = (a.ord - 1).chr
+    
+    cells_to_check =
+      case
+      when char == '♙' && a == 'a' && b == 5
+        ["#{a.next}#{b + 2}".to_sym]
+      when char == '♙' && a == 'h' && b == 5
+        ["#{prev}#{b + 2}".to_sym]
+      when char == '♟' && a == 'a' && b == 4
+        ["#{a.next}#{b - 2}".to_sym]
+      when char == '♟' && a == 'h' && b == 4
+        ["#{prev}#{b - 2}".to_sym]
+      when char == '♙' && b == 5
+        ["#{prev}#{b + 2}".to_sym, "#{a.next}#{b + 2}".to_sym]
+      when char == '♟' && b == 4
+        ["#{prev}#{b - 2}".to_sym, "#{a.next}#{b - 2}".to_sym]
+      end
+
+  end
+  
+  def promote
+  
+    pieces = [
+      'queen', 'rook',
+      'knight', 'bishop'
+    ]
+    
+    b = position[1]
+    
+    pieces if char == '♙' && b == '8' || char == '♟' && b == '1'
+    
   end
   
 end
@@ -141,9 +178,9 @@ end
 class Player
   
   PIECES = [
-    :pawn, :king,
-    :queen, :bishop,
-    :knight, :rook
+    :pawn, #:king,
+    #:queen, :bishop,
+    #:knight, :rook
   ]
   
   attr_accessor :name, :color, :pieces
@@ -170,53 +207,33 @@ class Player
     end
   end
   
-  def update_moves(board)
-    pieces.each do |_key, piece|
-      piece.update_moves
-      adjust(piece, board)
-    end
+  def get(start, finish)
+    pieces.detect { |_key, piece| (piece.position == start) && (piece.possible_moves.include? finish) }[1]
   end
   
-  def adjust(piece, board)
-    piece = pieces[piece] if piece.is_a? Symbol
+  def move(piece, finish)
+    piece.prev_position = piece.position
+    piece.position = finish
     
-    piece.possible_moves.delete_if { |move| board.hash_map[move].values[0] != "   " }
+    piece
+  end
     
-    piece.taking.each do |target|
-      
-      if ('a'..'f').include? board.hash_map[target].values[0][1].ord.to_s(16)[3]
-        piece.possible_moves << target
-      elsif (4..9).include? board.hash_map[target].values[0][1].ord.to_s(16)[3].to_i
-        piece.possible_moves << target
-      end
-      
-    end
-  end
-  
-  def move(start, finish, board)
-    piece = pieces.detect { |_key, piece| (piece.position == start) && (piece.possible_moves.include? finish) }[1]
-    
-    pick(piece, board)    
-    piece.position = finish    
-    place(piece, board)
-
-  end
-  
-  def pick(piece, board)
-    coord = board.hash_map[piece.position].keys[0]
-    board.grid[coord[0]][coord[1]][1] = ' '
-  end
-  
-  def place(piece, board)
-    coord = board.hash_map[piece.position].keys[0]
-    board.grid[coord[0]][coord[1]][1] = piece.char
-  end  
 end
 
 
 class Game
-
+  
+  @@position_to_remove = nil
+  
   attr_accessor :player_white, :player_black, :board
+
+  def self.position_to_remove
+    @@position_to_remove
+  end
+  
+  def self.position_to_remove=(position)
+    @@position_to_remove = position
+  end
   
   def initialize
     @board = Factory.create(:board)
@@ -227,7 +244,7 @@ class Game
   def setup
     [player_white, player_black].each do |player|
       player.pieces.each do |key, piece|
-        player.place(piece, board)
+        place(piece)
       end
     end
   end
@@ -238,22 +255,165 @@ class Game
     loop do
       
       [player_white, player_black].each do |player|
-        puts "#{player.color} turn"
-        
-        player.update_moves(board)
+
+        update_moves(player)
 
         board.visualize
+        
+        puts "#{player.color} turn"
         
         print '>> '
         
         move = gets.split(/\s/)
+        
         start, finish = move[0].to_sym, move[1].to_sym
         
-        player.move(start, finish, board)
+        piece = player.get(start, finish)
+        
+        pick(piece)
+        
+        piece = player.move(piece, finish)
+        
+        place(piece)
+        
+        if piece.promote
+          piece = pawn_promote(player, piece) 
+          add(player, piece)
+        end
+        
+        pick(piece.passant) unless piece.passant.is_a? Array
+        
+        remove_passant(player)
+        
+        update_moves(player)
+       
+      end
+    end
+  end 
+  
+  #private
+  
+  def pick(piece)
+    coord = board.hash_map[piece.position].keys[0]
+    board.grid[coord[0]][coord[1]][1] = ' '    
+  end
+  
+  def place(piece)
+    coord = board.hash_map[piece.position].keys[0]
+    board.grid[coord[0]][coord[1]][1] = piece.char
+  end
+  
+  def add(player, piece)
+    name = piece.class.to_s.downcase.to_sym
+    player.pieces["#{name}_#{piece.position}".to_sym] = piece
+  end
+  
+  def remove(player, piece, key = nil)
+  
+    if key.nil?
+      key = player.pieces.detect { |key, value| value.position == piece.position }[0]
+    end
+    
+    coord = board.hash_map[piece.position].keys[0]
+    p "key to be deleted => #{key}" if board.grid[coord[0]][coord[1]][1] != piece.char
+    player.pieces.delete(key) if board.grid[coord[0]][coord[1]][1] != piece.char
+  end
+  
+  
+  def update_moves(player)
+    player.pieces.each do |key, piece|
+    
+      remove(player, piece, key)
+      
+      piece.update_moves if piece.is_a? Pawn
+      
+      adjust(piece, player.color) if piece.is_a? Pawn
+      
+    end
+  end
+  
+  def adjust(piece, color)
+
+    adjust_pawn_possible_moves(piece) if piece.class == Pawn
+    
+    adjust_pawn_taking(piece, color) if piece.class == Pawn 
+
+    adjust_pawn_taking_en_passant(piece, color) if piece.taking_en_passant
+
+  end
+  
+  def pawn_promote(player, piece)
+    
+    puts "Choose the piece to promote the pawn to.\n #{piece.promote}"
+      
+    print '>> '
+    
+    choice = gets.chomp.to_sym
+    
+    new_piece = Factory.create(choice, {:color => player.color, :type => 0})
+    
+    new_piece.position = piece.position
+    
+    place(new_piece)
+   
+    remove(player, piece)
+    
+    new_piece
+    
+  end
+  
+  def adjust_pawn_possible_moves(piece)
+    piece.possible_moves.delete_if { |move| p move; board.hash_map[move].values[0] != "   " }
+  end
+  
+  def adjust_pawn_taking(piece, color)
+    piece.taking.each do |target|     
+      piece.possible_moves << target if (black?(target) && color == :white) || (white?(target) && color == :black)            
+    end
+  end
+  
+  def adjust_pawn_taking_en_passant(piece, color)
+  
+    if piece.taking_en_passant && !piece.passant.empty?
+    
+      piece.passant = piece.passant.detect { |passant| piece.position[1] == passant.position[1] }
+      
+      if piece.passant
+      
+        if ("a".."#{piece.position[0]}").include? piece.passant.position[0]
+          piece.possible_moves << piece.taking[0]
+        elsif ("#{piece.position[0]}".."h").include? piece.passant.position[0]
+          piece.possible_moves << piece.taking[-1]
+        end
+        
+      else
+        piece.passant = []
+      end
+    end    
+    
+    if piece.taking_en_passant && (piece.passant.is_a? Array)
+      piece.taking_en_passant.each do |target|
+        piece.passant << enemy(target, color) if black?(target) || white?(target)
       end
     end
   end
-    
+  
+  def white?(target)
+    (4..9).include? board.hash_map[target].values[0][1].ord.to_s(16)[3].to_i
+  end
+  
+  def black?(target)
+    ('a'..'f').include? board.hash_map[target].values[0][1].ord.to_s(16)[3]
+  end
+  
+  def enemy(target, color)
+    player = (color == :white) ? player_black : player_white
+    player.pieces.detect { |_key, piece| piece.position == target }[1]
+  end
+  
+  def remove_passant(player)
+    player.pieces.each { |_key, piece| piece.passant = [] }
+  end
 end
     
     
@@ -284,25 +444,7 @@ module Factory
 end  
 
 
-  
-#ovsjah = Player.new('Ovsjah', :white)
-#weasel = Player.new('Weasel', :black)
+
 #game = Game.new
 
-#game.setup
 #game.play
-#game.player_white.move(:d2, :d3, game.board)
-#game.player_black.move(:e7, :e5, game.board)
-#game.player_white.move(:f2, :f3, game.board)
-#game.player_white.move(:e2, :e3, game.board)
-#game.player_black.move(:e5, :e4, game.board)
-#game.player_white.adjust(:pawn_d2, game.board)
-#game.board.visualize
-
-#p game.player_black.pieces[:pawn_e7]
-#p game.player_white.pieces[:pawn_d2]
-#p game.player_white.pieces[:pawn_f2]
-
-#p game
-#p ovsjah
-#p weasel
