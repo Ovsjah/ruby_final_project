@@ -183,38 +183,74 @@ end
 describe Pawn do
 
   before(:all) do
-    @pawn_black = Pawn.new(:black, 4)
-    @pawn_white = Pawn.new(:white, 4) 
+    [:white, :black].each do |color|
+      {'a' => 0, 'e' => 4, 'h' => 7}.each do |key, value|
+        eval "\@pawn_#{color}_#{key} = Pawn.new(color, value)"
+      end
+    end
   end
   
   describe '#new' do
     it "returns a pawn object" do
-      expect(@pawn_black).to be_an_instance_of(Pawn)
+      expect(@pawn_black_e).to be_an_instance_of(Pawn)
     end
   end
   
   describe '#char' do
     it "returns '♟'" do
-      expect(@pawn_black.char).to eq('♟')
+      expect(@pawn_black_e.char).to eq('♟')
     end
   end
     
   describe '#position' do
     it "returns pawn's position" do
-      expect(@pawn_black.position).to eq(:e7)
-    end
-  end
-  
-  describe '#taking' do
-    it "returns targets to be taken" do
-      expect(@pawn_black.taking).to eq([:d6, :f6])
-      expect(@pawn_white.taking).to eq([:d3, :f3])
+      expect(@pawn_black_e.position).to eq(:e7)
     end
   end
   
   describe '#possible_moves' do
     it "returns possible_moves" do
-      expect(@pawn_black.possible_moves).to eq([:e6, :e5])
+      expect(@pawn_black_e.possible_moves).to eq([:e6, :e5])
+    end
+  end
+    
+  describe '#taking' do
+    it "returns targets to be taken" do
+      expect(@pawn_black_e.taking).to eq([:d6, :f6])
+      expect(@pawn_black_a.taking).to eq([:b6])
+      expect(@pawn_black_h.taking).to eq([:g6])
+      
+      expect(@pawn_white_e.taking).to eq([:d3, :f3])
+      expect(@pawn_white_a.taking).to eq([:b3])
+      expect(@pawn_white_h.taking).to eq([:g3])
+    end
+  end
+  
+  describe '#taking_en_passant' do
+    it "returns tracked targets" do
+      @pawn_black_e.position = :e4
+      expect(@pawn_black_e.taking_en_passant).to eq([:d2, :f2])
+      @pawn_black_a.position = :a4
+      expect(@pawn_black_a.taking_en_passant).to eq([:b2])
+      @pawn_black_h.position = :h4
+      expect(@pawn_black_h.taking_en_passant).to eq([:g2])
+      
+      @pawn_white_e.position = :e5
+      expect(@pawn_white_e.taking_en_passant).to eq([:d7, :f7])
+      @pawn_white_a.position = :a5
+      expect(@pawn_white_a.taking_en_passant).to eq([:b7])
+      @pawn_white_h.position = :h5
+      expect(@pawn_white_h.taking_en_passant).to eq([:g7])
+    end
+  end
+  
+  describe '#promote' do
+    it "returns an array of pieces to promote the pawn to" do
+      @pawn_black_e.position = :e1
+      expect(@pawn_black_e.promote).to eq(['queen', 'rook', 'knight', 'bishop'])
+      
+      @pawn_white_e.position = :e8
+      expect(@pawn_white_e.promote).to eq(['queen', 'rook', 'knight', 'bishop'])
     end
   end
 end
@@ -270,8 +306,9 @@ end
 
 describe Game do
 
-  before(:all) do
+  before(:each) do
     @game = Game.new
+    @game.setup
     @board = @game.board
     @player_white = @game.player_white
     @player_black = @game.player_black
@@ -344,6 +381,62 @@ describe Game do
       @player_black.move(piece, :f5)
       @game.update_moves(@player_black)
       expect(piece.possible_moves).to eq([:f4])
+    end
+  end
+  
+  describe '#adjust_pawn_possible_moves' do
+    it "returns an adjusted array of pawn's possible moves" do
+      piece_white = @player_white.get(:e2, :e4)
+      @game.pick(piece_white)
+      @player_white.move(piece_white, :e4)
+      @game.place(piece_white)
+    
+      piece_black = @player_black.get(:e7, :e5)
+      @game.pick(piece_black)
+      @player_black.move(piece_black, :e5)
+      @game.place(piece_black)
+      piece_black.update_moves
+      
+      @board.visualize
+      
+      expect(@game.adjust_pawn_possible_moves(piece_black)).to eq([])
+    end
+  end
+  
+  describe '#adjust_pawn_taking' do
+    it "adjusts pawn's possible moves by adding taking targets to it" do
+      piece_white = @player_white.get(:d2, :d4)
+      @game.pick(piece_white)
+      @player_white.move(piece_white, :d4)
+      @game.place(piece_white)
+      piece_white.update_moves
+      
+      piece_black = @player_black.get(:e7, :e5)
+      @game.pick(piece_black)
+      @player_black.move(piece_black, :e5)
+      @game.place(piece_black)
+      piece_black.update_moves
+      
+      @game.adjust_pawn_taking(piece_white, :white)
+      @game.adjust_pawn_taking(piece_black, :black)
+      
+      @board.visualize 
+      
+      expect(piece_white.possible_moves).to eq([:d5, :e5])
+      expect(piece_black.possible_moves).to eq([:e4, :d4])
+      
+      piece_white_f = @player_white.get(:f2, :f4)
+      @game.pick(piece_white_f)
+      @player_white.move(piece_white_f, :f4)
+      @game.place(piece_white_f)
+      
+      
+      piece_black.update_moves
+      @game.adjust_pawn_taking(piece_black, :black)
+      
+      @board.visualize
+      
+      expect(piece_black.possible_moves).to eq([:e4, :d4, :f4])
     end
   end
 end

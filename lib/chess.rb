@@ -116,7 +116,7 @@ class Pawn
     b = position[1].to_i
     prev = (a.ord - 1).chr
     
-    cells_to_check =
+    track =
       case
       when char == '♙' && a == 'a' && b == 5
         ["#{a.next}#{b + 2}".to_sym]
@@ -134,17 +134,14 @@ class Pawn
 
   end
   
-  def promote
-  
+  def promote  
     pieces = [
       'queen', 'rook',
       'knight', 'bishop'
     ]
-    
     b = position[1]
     
     pieces if char == '♙' && b == '8' || char == '♟' && b == '1'
-    
   end
   
 end
@@ -223,17 +220,7 @@ end
 
 class Game
   
-  @@position_to_remove = nil
-  
   attr_accessor :player_white, :player_black, :board
-
-  def self.position_to_remove
-    @@position_to_remove
-  end
-  
-  def self.position_to_remove=(position)
-    @@position_to_remove = position
-  end
   
   def initialize
     @board = Factory.create(:board)
@@ -315,7 +302,7 @@ class Game
     end
     
     coord = board.hash_map[piece.position].keys[0]
-    p "key to be deleted => #{key}" if board.grid[coord[0]][coord[1]][1] != piece.char
+
     player.pieces.delete(key) if board.grid[coord[0]][coord[1]][1] != piece.char
   end
   
@@ -363,7 +350,7 @@ class Game
   end
   
   def adjust_pawn_possible_moves(piece)
-    piece.possible_moves.delete_if { |move| p move; board.hash_map[move].values[0] != "   " }
+    piece.possible_moves.delete_if { |move| board.hash_map[move].values[0] != "   " }
   end
   
   def adjust_pawn_taking(piece, color)
