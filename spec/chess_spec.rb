@@ -196,6 +196,12 @@ describe Pawn do
     end
   end
   
+  describe '#color' do
+    it "returns pawn's color" do
+      expect(@pawn_black_e.color).to eq(:black)
+    end
+  end
+  
   describe '#char' do
     it "returns '♟'" do
       expect(@pawn_black_e.char).to eq('♟')
@@ -386,57 +392,90 @@ describe Game do
   
   describe '#adjust_pawn_possible_moves' do
     it "returns an adjusted array of pawn's possible moves" do
-      piece_white = @player_white.get(:e2, :e4)
-      @game.pick(piece_white)
-      @player_white.move(piece_white, :e4)
-      @game.place(piece_white)
-    
-      piece_black = @player_black.get(:e7, :e5)
-      @game.pick(piece_black)
-      @player_black.move(piece_black, :e5)
-      @game.place(piece_black)
-      piece_black.update_moves
+      piece_black_e = nil
+      
+      [@player_white, @player_black].each do |player|
+      
+        if player.color == :white
+          piece = @player_white.get(:e2, pos = :e4)
+        else
+          piece = @player_black.get(:e7, pos = :e5)
+          piece_black_e = piece
+        end
+        
+        @game.pick(piece)
+        player.move(piece, pos)
+        @game.place(piece)
+        piece.update_moves
+      end
       
       @board.visualize
       
-      expect(@game.adjust_pawn_possible_moves(piece_black)).to eq([])
+      expect(@game.adjust_pawn_possible_moves(piece_black_e)).to eq([])
     end
   end
   
   describe '#adjust_pawn_taking' do
-    it "adjusts pawn's possible moves by adding taking targets to it" do
-      piece_white = @player_white.get(:d2, :d4)
-      @game.pick(piece_white)
-      @player_white.move(piece_white, :d4)
-      @game.place(piece_white)
-      piece_white.update_moves
+    it "adds taking targets to pawn's possible_moves" do
+      piece_white_d = nil
+      piece_black_e = nil
       
-      piece_black = @player_black.get(:e7, :e5)
-      @game.pick(piece_black)
-      @player_black.move(piece_black, :e5)
-      @game.place(piece_black)
-      piece_black.update_moves
+      [@player_white, @player_black].each do |player|
       
-      @game.adjust_pawn_taking(piece_white, :white)
-      @game.adjust_pawn_taking(piece_black, :black)
+        if player.color == :white
+          piece = @player_white.get(:d2, pos = :d4)
+          piece_white_d = piece
+        else
+          piece = @player_black.get(:e7, pos = :e5)
+          piece_black_e = piece
+        end
+        
+        @game.pick(piece)
+        player.move(piece, pos)
+        @game.place(piece)
+        piece.update_moves
+        @game.adjust_pawn_taking(piece_white_d)
+        
+      end
       
-      @board.visualize 
-      
-      expect(piece_white.possible_moves).to eq([:d5, :e5])
-      expect(piece_black.possible_moves).to eq([:e4, :d4])
-      
-      piece_white_f = @player_white.get(:f2, :f4)
-      @game.pick(piece_white_f)
-      @player_white.move(piece_white_f, :f4)
-      @game.place(piece_white_f)
-      
-      
-      piece_black.update_moves
-      @game.adjust_pawn_taking(piece_black, :black)
+      @game.adjust_pawn_taking(piece_black_e)
       
       @board.visualize
       
-      expect(piece_black.possible_moves).to eq([:e4, :d4, :f4])
+      expect(piece_white_d.possible_moves).to eq([:d5, :e5])
+      expect(piece_black_e.possible_moves).to eq([:e4, :d4])
+    end
+  end
+  
+  describe '#adjust_pawn_taking_en_passant' do
+    it "adds passant to pawn's possible_moves" do
+      piece_white_e = nil
+     
+      2.times do |i|
+        [@player_white, @player_black].each do |player|
+            
+          if i == 0 && player.color == :white
+            piece = @player_white.get(:e2, pos = :e4)
+          elsif i == 0 && player.color == :black
+            piece = @player_black.get(:a7, pos = :a5)
+          elsif i == 1 && player.color == :white
+            piece = @player_white.get(:e4, pos = :e5)
+            piece_white_e = piece
+          elsif i == 1 && player.color == :black
+            piece = @player_black.get(:f7, pos = :f5)
+          end
+            
+          @game.pick(piece)
+          player.move(piece, pos)
+          @game.place(piece)
+          piece.update_moves
+          @game.adjust_pawn_taking_en_passant(piece_white_e) unless piece_white_e.nil?
+        end
+      end
+        
+      @board.visualize
+        
+      expect(piece_white_e.possible_moves).to eq([:e6, :f6])
     end
   end
 end

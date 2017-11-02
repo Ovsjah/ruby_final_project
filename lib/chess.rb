@@ -60,9 +60,10 @@ class Pawn
     :black => [:a7, :b7, :c7, :d7, :e7, :f7, :g7, :h7, "\u265f"]
   }
         
-  attr_accessor :char, :position, :prev_position, :passant, :possible_moves
+  attr_accessor :color, :char, :position, :prev_position, :passant, :possible_moves
   
   def initialize(color, type)
+    @color = color
     @char = self.class::CHARS[color][-1]
     @position = self.class::CHARS[color][type]      
     @prev_position = nil
@@ -314,18 +315,18 @@ class Game
       
       piece.update_moves if piece.is_a? Pawn
       
-      adjust(piece, player.color) if piece.is_a? Pawn
+      adjust(piece) if piece.is_a? Pawn
       
     end
   end
   
-  def adjust(piece, color)
+  def adjust(piece)
 
     adjust_pawn_possible_moves(piece) if piece.class == Pawn
     
-    adjust_pawn_taking(piece, color) if piece.class == Pawn 
+    adjust_pawn_taking(piece) if piece.class == Pawn 
 
-    adjust_pawn_taking_en_passant(piece, color) if piece.taking_en_passant
+    adjust_pawn_taking_en_passant(piece) if piece.taking_en_passant
 
   end
   
@@ -353,13 +354,13 @@ class Game
     piece.possible_moves.delete_if { |move| board.hash_map[move].values[0] != "   " }
   end
   
-  def adjust_pawn_taking(piece, color)
+  def adjust_pawn_taking(piece)
     piece.taking.each do |target|     
-      piece.possible_moves << target if (black?(target) && color == :white) || (white?(target) && color == :black)            
+      piece.possible_moves << target if (black?(target) && piece.color  == :white) || (white?(target) && piece.color == :black)            
     end
   end
   
-  def adjust_pawn_taking_en_passant(piece, color)
+  def adjust_pawn_taking_en_passant(piece)
   
     if piece.taking_en_passant && !piece.passant.empty?
     
@@ -380,7 +381,7 @@ class Game
     
     if piece.taking_en_passant && (piece.passant.is_a? Array)
       piece.taking_en_passant.each do |target|
-        piece.passant << enemy(target, color) if black?(target) || white?(target)
+        piece.passant << enemy(target, piece.color) if black?(target) || white?(target)
       end
     end
   end
@@ -433,5 +434,4 @@ end
 
 
 #game = Game.new
-
 #game.play
