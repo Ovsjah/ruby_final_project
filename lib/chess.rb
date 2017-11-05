@@ -60,13 +60,12 @@ class Pawn
     :black => [:a7, :b7, :c7, :d7, :e7, :f7, :g7, :h7, "\u265f"]
   }
         
-  attr_accessor :color, :char, :position, :prev_position, :passant, :possible_moves
+  attr_accessor :color, :char, :position, :passant, :possible_moves
   
   def initialize(color, type)
     @color = color
     @char = self.class::CHARS[color][-1]
     @position = self.class::CHARS[color][type]      
-    @prev_position = nil
     @passant = []
     @possible_moves = update_moves 
   end
@@ -163,8 +162,36 @@ class Bishop < Pawn
 end
 
 
-class Knight < Pawn
-  CHARS = {:white => [:g1, :b1, "\u2658"], :black => [:b8, :g8, "\u265e"]}
+class Knight
+  CHARS = {:white => [:b1, :g1, "\u2658"], :black => [:b8, :g8, "\u265e"]}
+  
+  attr_accessor :color, :char, :position, :possible_moves
+  
+  def initialize(color, type)
+    @color = color
+    @char = CHARS[color][-1]
+    @position = CHARS[color][type]
+    @possible_moves = update_moves
+  end
+  
+  def update_moves
+    a = position[0]
+    b = position[1].to_i
+
+    alts = [-2, -1, 1, 2].permutation(2).select { |a, b| a.abs != b.abs }
+    
+    @possible_moves = alts.map do |alt|
+
+      if [-2, -1].include? alt[0]
+        "#{(a.ord - alt[0].abs).chr}#{b - alt[1]}".to_sym
+      else
+        "#{(a.ord + alt[0].abs).chr}#{b - alt[1]}".to_sym 
+      end
+      
+    end
+    
+    @possible_moves.delete_if { |move| move.size == 3 || !move[0].between?('a', 'h') || !move[1].between?('1', '8') }
+  end
 end
 
 
@@ -210,9 +237,7 @@ class Player
   end
   
   def move(piece, finish)
-    piece.prev_position = piece.position
-    piece.position = finish
-    
+    piece.position = finish    
     piece
   end
     
@@ -258,23 +283,25 @@ class Game
         
         piece = player.get(start, finish)
         
+        p piece.possible_moves
         pick(piece)
         
         piece = player.move(piece, finish)
         
         place(piece)
         
-        if piece.promote
-          piece = pawn_promote(player, piece) 
-          add(player, piece)
+        if piece.class == Pawn
+        
+          if piece.promote
+            piece = pawn_promote(player, piece) 
+            add(player, piece)
+          end
+          
+          pick(piece.passant) unless piece.passant.is_a? Array         
+          remove_passant(player)
         end
-        
-        pick(piece.passant) unless piece.passant.is_a? Array
-        
-        remove_passant(player)
-        
-        update_moves(player)
-       
+            
+        update_moves(player)       
       end
     end
   end 
@@ -313,21 +340,22 @@ class Game
     
       remove(player, piece, key)
       
-      piece.update_moves if piece.is_a? Pawn
+      piece.update_moves if piece.is_a?(Pawn) || piece.is_a?(Knight)
       
-      adjust(piece) if piece.is_a? Pawn
+      adjust(piece) if piece.is_a?(Pawn) || piece.is_a?(Knight)
       
     end
   end
   
   def adjust(piece)
-
-    adjust_pawn_possible_moves(piece) if piece.class == Pawn
     
-    adjust_pawn_taking(piece) if piece.class == Pawn 
-
-    adjust_pawn_taking_en_passant(piece) if piece.taking_en_passant
-
+    if piece.class == Pawn
+      adjust_pawn_possible_moves(piece)
+      adjust_pawn_taking(piece)
+      adjust_pawn_taking_en_passant(piece) if piece.taking_en_passant
+    end
+    
+    adjust_knight_possible_moves(piece) if piece.class == Knight
   end
   
   def pawn_promote(player, piece)
@@ -386,6 +414,12 @@ class Game
     end
   end
   
+  def adjust_knight_possible_moves(piece)
+    piece.possible_moves.delete_if do |move| 
+      white?(move) && piece.color == :white || black?(move) && piece.color == :black    
+    end
+  end
+  
   def white?(target)
     (4..9).include? board.hash_map[target].values[0][1].ord.to_s(16)[3].to_i
   end
@@ -400,7 +434,7 @@ class Game
   end
   
   def remove_passant(player)
-    player.pieces.each { |_key, piece| piece.passant = [] }
+    player.pieces.each { |_key, piece| piece.passant = [] if piece.is_a? Pawn }   
   end
 end
     
@@ -434,4 +468,5 @@ end
 
 
 #game = Game.new
+#p game.player_white.pieces[:knight_b1]
 #game.play

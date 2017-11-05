@@ -131,24 +131,37 @@ end
 describe Knight do
 
   before(:all) do
-    @knight = Knight.new(:black, 1)
+    [:white, :black].each do |color|
+      {'b' => 0, 'g' => 1}.each do |key, value|
+        eval "\@knight_#{color}_#{key} = Knight.new(color, value)"
+      end
+    end
   end
   
   describe '#new' do
     it "returns a knight object" do
-      expect(@knight).to be_an_instance_of(Knight)
+      expect(@knight_black_g).to be_an_instance_of(Knight)
     end
   end
   
   describe '#char' do
     it "returns '♞'" do
-      expect(@knight.char).to eq('♞')
+      expect(@knight_black_g.char).to eq('♞')
     end
   end
   
   describe '#position' do
     it "returns knight's position" do
-      expect(@knight.position).to eq(:g8)
+      expect(@knight_black_g.position).to eq(:g8)
+    end
+  end
+  
+  describe '#possible_moves' do
+    it "returns possible_moves" do
+      expect(@knight_black_g.possible_moves).to eq([:e7, :f6, :h6])
+      expect(@knight_black_b.possible_moves).to eq([:a6, :c6, :d7])
+      expect(@knight_white_b.possible_moves).to eq([:a3, :c3, :d2])
+      expect(@knight_white_g.possible_moves).to eq([:e2, :f3, :h3])
     end
   end
 end
@@ -476,6 +489,24 @@ describe Game do
       @board.visualize
         
       expect(piece_white_e.possible_moves).to eq([:e6, :f6])
+    end
+  end
+  
+  describe '#adjust_knight_possible_moves' do
+    it "returns an adjusted array of knight's possible moves" do
+      knights = [
+        knight_white_b = @player_white.pieces[:knight_b1],
+        knight_white_g = @player_white.pieces[:knight_g1],
+        knight_black_b = @player_black.pieces[:knight_b8],
+        knight_black_g = @player_black.pieces[:knight_g8]
+      ]
+      
+      knights.each { |knight| @game.adjust_knight_possible_moves(knight) }
+      
+      expect(knight_white_b.possible_moves).to eq([:a3, :c3])
+      expect(knight_white_g.possible_moves).to eq([:f3, :h3])
+      expect(knight_black_b.possible_moves).to eq([:a6, :c6])
+      expect(knight_black_g.possible_moves).to eq([:f6, :h6])
     end
   end
 end
