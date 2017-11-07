@@ -147,8 +147,40 @@ class Pawn
 end
 
 
-class King < Pawn
+class King
   CHARS = {:white => [:e1, "\u2654"], :black => [:e8, "\u265a"]}
+  
+  attr_accessor :color, :char, :check, :mate, :stalemate, :position, :possible_moves
+  
+  def initialize(color, type)
+    @color = color
+    @char = CHARS[color][-1]
+    @check = false
+    @mate = false
+    @stalemate = false
+    @position = CHARS[color][0]
+    @possible_moves = update_moves
+  end
+  
+  def alts
+    alts = [-1, 0, 0,  1].repeated_permutation(2).uniq.delete_if { |el| el == [0, 0] }
+  end
+  
+  def update_moves
+    a = position[0]
+    b = position[1].to_i
+    
+    @possible_moves = alts.map do |alt|
+
+      if alt[0] < 0
+        "#{(a.ord - alt[0].abs).chr}#{b - alt[1]}".to_sym
+      else
+        "#{(a.ord + alt[0].abs).chr}#{b - alt[1]}".to_sym 
+      end
+    end
+    
+    @possible_moves.delete_if { |move| move.size == 3 || !move[0].between?('a', 'h') || !move[1].between?('1', '8') }
+  end
 end
 
 
@@ -162,7 +194,7 @@ class Bishop < Pawn
 end
 
 
-class Knight
+class Knight < King
   CHARS = {:white => [:b1, :g1, "\u2658"], :black => [:b8, :g8, "\u265e"]}
   
   attr_accessor :color, :char, :position, :possible_moves
@@ -174,23 +206,8 @@ class Knight
     @possible_moves = update_moves
   end
   
-  def update_moves
-    a = position[0]
-    b = position[1].to_i
-
+  def alts
     alts = [-2, -1, 1, 2].permutation(2).select { |a, b| a.abs != b.abs }
-    
-    @possible_moves = alts.map do |alt|
-
-      if [-2, -1].include? alt[0]
-        "#{(a.ord - alt[0].abs).chr}#{b - alt[1]}".to_sym
-      else
-        "#{(a.ord + alt[0].abs).chr}#{b - alt[1]}".to_sym 
-      end
-      
-    end
-    
-    @possible_moves.delete_if { |move| move.size == 3 || !move[0].between?('a', 'h') || !move[1].between?('1', '8') }
   end
 end
 
@@ -297,7 +314,11 @@ class Game
             add(player, piece)
           end
           
-          pick(piece.passant) unless piece.passant.is_a? Array         
+          p piece.passant
+          unless piece.passant.is_a? Array
+            pick(piece.passant) if piece.position[0] == piece.passant.position[0]
+          end
+               
           remove_passant(player)
         end
             
@@ -340,9 +361,9 @@ class Game
     
       remove(player, piece, key)
       
-      piece.update_moves if piece.is_a?(Pawn) || piece.is_a?(Knight)
+      piece.update_moves
       
-      adjust(piece) if piece.is_a?(Pawn) || piece.is_a?(Knight)
+      adjust(piece)
       
     end
   end
@@ -355,7 +376,7 @@ class Game
       adjust_pawn_taking_en_passant(piece) if piece.taking_en_passant
     end
     
-    adjust_knight_possible_moves(piece) if piece.class == Knight
+    adjust_possible_moves(piece) if piece.is_a? King
   end
   
   def pawn_promote(player, piece)
@@ -393,7 +414,7 @@ class Game
     if piece.taking_en_passant && !piece.passant.empty?
     
       piece.passant = piece.passant.detect { |passant| piece.position[1] == passant.position[1] }
-      
+      p piece.passant
       if piece.passant
       
         if ("a".."#{piece.position[0]}").include? piece.passant.position[0]
@@ -401,20 +422,18 @@ class Game
         elsif ("#{piece.position[0]}".."h").include? piece.passant.position[0]
           piece.possible_moves << piece.taking[-1]
         end
-        
-      else
-        piece.passant = []
+
       end
     end    
     
     if piece.taking_en_passant && (piece.passant.is_a? Array)
       piece.taking_en_passant.each do |target|
-        piece.passant << enemy(target, piece.color) if black?(target) || white?(target)
+        piece.passant << enemy(target, piece.color) if (black?(target) && piece.color  == :white) || (white?(target) && piece.color == :black)
       end
     end
   end
   
-  def adjust_knight_possible_moves(piece)
+  def adjust_possible_moves(piece)
     piece.possible_moves.delete_if do |move| 
       white?(move) && piece.color == :white || black?(move) && piece.color == :black    
     end
@@ -429,8 +448,8 @@ class Game
   end
   
   def enemy(target, color)
-    player = (color == :white) ? player_black : player_white
-    player.pieces.detect { |_key, piece| piece.position == target }[1]
+    enemy = (color == :white) ? player_black : player_white
+    enemy.pieces.detect { |_key, piece| piece.position == target }[1]
   end
   
   def remove_passant(player)
@@ -468,5 +487,5 @@ end
 
 
 #game = Game.new
-#p game.player_white.pieces[:knight_b1]
+#p game.player_white.pieces[:king_e1]
 #game.play

@@ -53,24 +53,32 @@ end
 describe King do
 
   before(:all) do
-    @king = King.new(:white, 0)
+    @king_white = King.new(:white, 0)
+    @king_black = King.new(:black, 0)
   end
   
   describe '#new' do
     it "returns a king object" do
-      expect(@king).to be_an_instance_of(King)
+      expect(@king_white).to be_an_instance_of(King)
     end
   end
   
   describe '#char' do
     it "returns '♔'" do
-      expect(@king.char).to eq('♔')
+      expect(@king_white.char).to eq('♔')
     end
   end
   
   describe '#position' do
     it "returns the position of the king" do
-      expect(@king.position).to eq(:e1)
+      expect(@king_white.position).to eq(:e1)
+    end
+  end
+  
+  describe '#possible_moves' do
+    it "returns possible_moves" do
+      expect(@king_white.possible_moves).to eq([:d2, :d1, :e2, :f2, :f1])
+      expect(@king_black.possible_moves).to eq([:d8, :d7, :e7, :f8, :f7])
     end
   end
 end
@@ -492,8 +500,8 @@ describe Game do
     end
   end
   
-  describe '#adjust_knight_possible_moves' do
-    it "returns an adjusted array of knight's possible moves" do
+  describe '#adjust_possible_moves' do
+    it "returns an adjusted array of piece's (except pawn) possible moves" do
       knights = [
         knight_white_b = @player_white.pieces[:knight_b1],
         knight_white_g = @player_white.pieces[:knight_g1],
@@ -501,12 +509,22 @@ describe Game do
         knight_black_g = @player_black.pieces[:knight_g8]
       ]
       
-      knights.each { |knight| @game.adjust_knight_possible_moves(knight) }
+      kings = [
+        king_white = @player_white.pieces[:king_e1],
+        king_black = @player_black.pieces[:king_e8]
+      ]
+      
+      knights.each { |knight| @game.adjust_possible_moves(knight) }
       
       expect(knight_white_b.possible_moves).to eq([:a3, :c3])
       expect(knight_white_g.possible_moves).to eq([:f3, :h3])
       expect(knight_black_b.possible_moves).to eq([:a6, :c6])
       expect(knight_black_g.possible_moves).to eq([:f6, :h6])
+      
+      kings.each { |king| @game.adjust_possible_moves(king) }
+      
+      expect(king_white.possible_moves).to eq([])
+      expect(king_black.possible_moves).to eq([])
     end
   end
 end
