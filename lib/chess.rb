@@ -422,7 +422,9 @@ class Game
         elsif ("#{piece.position[0]}".."h").include? piece.passant.position[0]
           piece.possible_moves << piece.taking[-1]
         end
-
+        
+      else
+        piece.passant = []
       end
     end    
     
