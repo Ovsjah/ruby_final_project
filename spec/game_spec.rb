@@ -1,7 +1,3 @@
-#require 'board'
-#require 'player'
-#require 'pieces'
-#require 'factory'
 require 'game'
 
 describe Game do
@@ -232,25 +228,43 @@ describe Game do
         end
       end
       
-      [@player_white, @player_black].each do |player|
-        if player.color == :white
-          piece = player.get(:e2, pos = :e4)
-          queen = queens[0]
-        elsif player.color == :black
-          piece = player.get(:e7, pos = :e5)
-          queen = queens[1]
+      2.times do |i|
+        [@player_white, @player_black].each do |player|
+          if player.color == :white
+            queen = queens[0]
+          else
+            queen = queens[1]
+          end
+          
+          piece =
+            case
+            when i == 0 && player.color == :white 
+              player.get(:e2, pos = :e4)            
+            when i == 0 && player.color == :black
+              player.get(:e7, pos = :e5)
+            when i == 1 && player.color == :white
+              player.get(:d1, pos = :h5)
+            when i == 1 && player.color == :black
+              piece = player.get(:d8, pos = :g5)
+            end
+          
+          @game.pick(piece)
+          player.move(piece, pos)
+          @game.place(piece)
+          
+          piece.update_moves
+          queen.update_moves
+          
+          @game.adjust_possible_moves(queen)
         end
-        
-        @game.pick(piece)
-        player.move(piece, pos)
-        @game.place(piece)
-        piece.update_moves
-        queen.update_moves
-        @game.adjust_possible_moves(queen)
       end
       
-      expect(queen_white.possible_moves).to eq([:e2, :f3, :g4, :h5])
-      expect(queen_black.possible_moves).to eq([:e7, :f6, :g5, :h4])
+      @game.adjust_possible_moves(queen_white)
+      @game.adjust_possible_moves(queen_black)
+      
+      expect(queen_white.possible_moves).to eq([:d1, :e2, :f7, :f3, :g6, :g5, :g4, :h7, :h6, :h4, :h3])
+      expect(queen_black.possible_moves).to eq([:d8, :d2, :e7, :e3, :f6, :f5, :f4, :g6, :g4, :g3, :g2, :h6, :h5, :h4]
+)
       @board.visualize
     end
   end

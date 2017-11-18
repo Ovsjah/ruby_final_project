@@ -1,6 +1,3 @@
-#require './lib/player'
-#require './lib/board'
-#require './lib/pieces'
 require './lib/factory'
 
 class Game
@@ -244,7 +241,7 @@ class Game
         end
       end
     end    
-
+    p "at_left => #{lines[:left]}" if piece.color == :white && piece.class == Queen
     lines.each do |key, value|
       if [:up, :left, :up_left_diagonal, :down_left_diagonal].include?(key) && !value.empty?
         found << pick_out(piece, value[-1], key)
@@ -253,7 +250,7 @@ class Game
       end
     end
     
-    #p "#{piece.class}_#{piece.color} => #{found}"
+    p "#{piece.class}_#{piece.color} => #{found}"
     
     found.flatten.each do |move|
       piece.possible_moves.delete(move)
@@ -334,11 +331,13 @@ class Game
   end 
   
   def at_left?(piece_pos, target)
-    ("a"..."#{piece_pos[0]}").include? target[0]
+    piece_pos != target &&
+    ("a"..."#{piece_pos[0]}").include?(target[0])
   end
    
   def at_right?(piece_pos, target)
-    ("#{(piece_pos[0].ord + 1).chr}".."h").include? target[0]
+    piece_pos != target &&
+    ("#{(piece_pos[0].ord + 1).chr}".."h").include?(target[0])
   end
     
   def white?(target)

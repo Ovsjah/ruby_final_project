@@ -141,7 +141,7 @@ module Pieces
     end
   
     def alts
-      alts = [-1, 0, 0,  1].repeated_permutation(2).uniq.delete_if { |el| el == [0, 0] }
+      p alts = [-1, 0, 0,  1].repeated_permutation(2).uniq.delete_if { |el| el == [0, 0] }
     end
   end
 

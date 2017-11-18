@@ -25,6 +25,12 @@ describe Pieces::King do
     end
   end
   
+  describe '#alts' do
+    it "returns altitudes" do
+      expect(@king_white.alts).to eq([[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]])
+    end
+  end
+  
   describe '#possible_moves' do
     it "returns possible_moves" do
       expect(@king_white.possible_moves).to eq([:d2, :d1, :e2, :f2, :f1])
@@ -57,6 +63,18 @@ describe Pieces::Queen do
       expect(@queen.position).to eq(:d8)
     end
   end
+  
+  describe '#alts' do
+    it "returns altitudes" do
+      expect(@queen.alts).to eq([[-7, -7], [-7, 0], [-7, 7], [-6, -6], [-6, 0], [-6, 6], [-5, -5], [-5, 0], [-5, 5], [-4, -4], [-4, 0], [-4, 4], [-3, -3], [-3, 0], [-3, 3], [-2, -2], [-2, 0], [-2, 2], [-1, -1], [-1, 0], [-1, 1], [0, -7], [0, -6], [0, -5], [0, -4], [0, -3], [0, -2], [0, -1], [0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6], [0, 7], [1, -1], [1, 0], [1, 1], [2, -2], [2, 0], [2, 2], [3, -3], [3, 0], [3, 3], [4, -4], [4, 0], [4, 4], [5, -5], [5, 0], [5, 5], [6, -6], [6, 0], [6, 6], [7, -7], [7, 0], [7, 7]])
+    end
+  end
+  
+  describe '#possible_moves' do
+    it "returns possible_moves" do
+      expect(@queen.possible_moves).to eq([:a8, :a5, :b8, :b6, :c8, :c7, :d7, :d6, :d5, :d4, :d3, :d2, :d1, :e8, :e7, :f8, :f6, :g8, :g5, :h8, :h4])
+    end
+  end
 end
 
 
@@ -84,11 +102,17 @@ describe Pieces::Bishop do
     end
   end
   
-  #describe '#alts' do
-    #it "returns altitudes" do
-      #expect(@bishop.alts).to eq([])
-    #end
-  #end
+  describe '#alts' do
+    it "returns altitudes" do
+      expect(@bishop.alts).to eq([[-7, -7], [-7, 7], [-6, -6], [-6, 6], [-5, -5], [-5, 5], [-4, -4], [-4, 4], [-3, -3], [-3, 3], [-2, -2], [-2, 2], [-1, -1], [-1, 1], [1, -1], [1, 1], [2, -2], [2, 2], [3, -3], [3, 3], [4, -4], [4, 4], [5, -5], [5, 5], [6, -6], [6, 6], [7, -7], [7, 7]])
+    end
+  end
+  
+  describe '#possible_moves' do
+    it "returns possible_moves" do
+      expect(@bishop.possible_moves).to eq([:a3, :b2, :d2, :e3, :f4, :g5, :h6])
+    end
+  end
 end
 
 
@@ -117,6 +141,12 @@ describe Pieces::Knight do
   describe '#position' do
     it "returns knight's position" do
       expect(@knight_black_g.position).to eq(:g8)
+    end
+  end
+  
+  describe '#alts' do
+    it "returns altitudes" do
+      expect(@knight_black_g.alts).to eq([[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]])
     end
   end
   
@@ -152,6 +182,18 @@ describe Pieces::Rook do
   describe '#position' do
     it "returns rook's position" do
       expect(@rook.position).to eq(:a1)
+    end
+  end
+  
+  describe '#alts' do
+    it "returns altitudes" do
+      expect(@rook.alts).to eq([[-7, 0], [-6, 0], [-5, 0], [-4, 0], [-3, 0], [-2, 0], [-1, 0], [0, -7], [0, -6], [0, -5], [0, -4], [0, -3], [0, -2], [0, -1], [0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6], [0, 7], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0], [7, 0]])
+    end
+  end
+  
+  describe '#possible_moves' do
+    it "returns possible_moves" do
+      expect(@rook.possible_moves).to eq([:a8, :a7, :a6, :a5, :a4, :a3, :a2, :b1, :c1, :d1, :e1, :f1, :g1, :h1])
     end
   end
 end
