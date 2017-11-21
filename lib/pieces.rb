@@ -6,12 +6,13 @@ module Pieces
       :black => [:a7, :b7, :c7, :d7, :e7, :f7, :g7, :h7, "\u265f"]
     }
         
-    attr_accessor :color, :char, :position, :passant, :possible_moves
+    attr_accessor :color, :char, :position, :prev_pos, :passant, :possible_moves
   
     def initialize(color, type)
       @color = color
       @char = CHARS[color][-1]
-      @position = CHARS[color][type]      
+      @position = CHARS[color][type]
+      @prev_pos = nil      
       @passant = []
       @possible_moves = update_moves 
     end
@@ -96,12 +97,13 @@ module Pieces
   class Knight
     CHARS = {:white => [:b1, :g1, "\u2658"], :black => [:b8, :g8, "\u265e"]}
   
-    attr_accessor :color, :char, :position, :possible_moves
+    attr_accessor :color, :char, :position, :prev_pos, :possible_moves
   
     def initialize(color, type)
       @color = color
       @char = self.class::CHARS[color][-1]
-      @position = self.class::CHARS[color][type]  
+      @position = self.class::CHARS[color][type]
+      @prev_pos = nil  
       @possible_moves = update_moves
     end
   
@@ -130,18 +132,17 @@ module Pieces
   class King < Knight
     CHARS = {:white => [:e1, "\u2654"], :black => [:e8, "\u265a"]}
   
-    attr_accessor :color, :char, :check, :checked_from, :mate, :stalemate, :position, :possible_moves
+    attr_accessor :color, :char, :check, :mate, :stalemate, :position, :possible_moves
   
     def initialize(color, type)
       super
       @check = false
-      @checked_from = []
       @mate = false
       @stalemate = false
     end
   
     def alts
-      p alts = [-1, 0, 0,  1].repeated_permutation(2).uniq.delete_if { |el| el == [0, 0] }
+      alts = [-1, 0, 0,  1].repeated_permutation(2).uniq.delete_if { |el| el == [0, 0] }
     end
   end
 

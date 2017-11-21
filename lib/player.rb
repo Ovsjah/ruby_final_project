@@ -35,6 +35,7 @@ class Player
   end
   
   def move(piece, finish)
+    piece.prev_pos = piece.position
     piece.position = finish    
     piece
   end    

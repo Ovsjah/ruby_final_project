@@ -24,14 +24,18 @@ class Game
     setup
     
     loop do
-      
-      [player_white, player_black].each do |player|
 
+      [player_white, player_black].each do |player|
+      
+        king = king(player)
+        update_moves(foe(player.color))
         update_moves(player)
        
         board.visualize
         
         puts "#{player.color} turn"
+        
+        puts "Achtung! Check!" if king.check          
         
         print '>> '
         
@@ -54,17 +58,29 @@ class Game
             add(player, piece)
           end
           
-          
           if piece.class == Pawn
             unless piece.passant.is_a? Array
               pick(piece.passant) if piece.position[0] == piece.passant.position[0]
             end
-          end
+          end        
                
           remove_passant(player)
         end
             
-        update_moves(player)       
+        update_moves(player)
+        
+        if king.check
+      
+          update_moves(foe(player.color))
+          
+          if king.check
+            pick(piece)        
+            piece = player.move(piece, piece.prev_pos)
+            place(piece)
+            
+            redo
+          end
+        end     
       end
     end
   end 
@@ -100,10 +116,7 @@ class Game
   end
   
   
-  def update_moves(player)
-  
-    #king = player.color == :white ? player_white.pieces[:king_e1] : player_black.pieces[:king_e8]
-    #p king
+  def update_moves(player)     
     player.pieces.each do |key, piece|
       
       remove(player, piece, key)
@@ -111,22 +124,9 @@ class Game
       piece.update_moves
       
       adjust(piece)
-      
-      #if king.check && !piece.possible_moves.nil?
-        #puts "Achtung! Check!"
-        
-        #if piece.possible_moves.include? king.checked_from[0]
-          #piece.possible_moves = [king.checked_from[0]]
-        #else
-          #piece.possible_moves = []
-        #end
-        
-      #end
-      
-      #unless piece.possible_moves.nil?
-        #check?(piece)
-      #end
     end
+    
+    enemy_king(player.color).check = player.pieces.any? { |_key, piece| check?(piece) }
   end
   
   def adjust(piece)
@@ -193,7 +193,7 @@ class Game
     
     if piece.taking_en_passant && (piece.passant.is_a? Array)
       piece.taking_en_passant.each do |target|
-        piece.passant << enemy(target, piece.color) if cell_with_foe?(piece, target) 
+        piece.passant << enemy_piece(target, piece.color) if cell_with_foe?(piece, target) 
       end
     end
   end
@@ -241,7 +241,7 @@ class Game
         end
       end
     end    
-    p "at_left => #{lines[:left]}" if piece.color == :white && piece.class == Queen
+    #p "at_left => #{lines[:left]}" if piece.color == :white && piece.class == Queen
     lines.each do |key, value|
       if [:up, :left, :up_left_diagonal, :down_left_diagonal].include?(key) && !value.empty?
         found << pick_out(piece, value[-1], key)
@@ -250,13 +250,13 @@ class Game
       end
     end
     
-    p "#{piece.class}_#{piece.color} => #{found}"
+    #p "#{piece.class}_#{piece.color} => #{found}"
     
     found.flatten.each do |move|
       piece.possible_moves.delete(move)
     end
     
-    p "#{piece.class}_#{piece.color} => #{piece.possible_moves}"
+    #p "#{piece.class}_#{piece.color} => #{piece.possible_moves}"
   end
   
   def pick_out(piece, pos, sym)
@@ -349,18 +349,24 @@ class Game
   end
   
   def check?(piece)
-    enemy = (piece.color == :white) ? player_black : player_white
-    enemy_king = enemy.pieces[:king_e1] || enemy.pieces[:king_e8]
-    
-    if piece.possible_moves.include?(enemy_king.position)
-      enemy_king.check = true
-      enemy_king.checked_from << piece.position
-    end
+    piece.possible_moves.include?(enemy_king(piece.color).position) 
   end  
+          
+  def enemy_king(color)
+    enemy = foe(color)
+    enemy.pieces[:king_e1] || enemy.pieces[:king_e8]
+  end
   
-  def enemy(target, color)
-    enemy = (color == :white) ? player_black : player_white
-    enemy.pieces.detect { |_key, piece| piece.position == target }[1]
+  def king(player)
+    player.color == :white ? player_white.pieces[:king_e1] : player_black.pieces[:king_e8]
+  end
+           
+  def enemy_piece(target, color)
+    foe(color).pieces.detect { |_key, piece| piece.position == target }[1]
+  end
+  
+  def foe(color)
+    color == :white ? player_black : player_white
   end
   
   def cell_with_foe?(piece, move)

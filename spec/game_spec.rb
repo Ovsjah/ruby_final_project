@@ -268,4 +268,38 @@ describe Game do
       @board.visualize
     end
   end
+  
+  describe '#check?' do
+    it "returns true of false if check" do
+      queen_white = @player_white.pieces[:queen_d1]
+      
+      2.times do |i|
+        [@player_white, @player_black].each do |player|
+                 
+          piece =
+            case
+            when i == 0 && player.color == :white 
+              player.get(:e2, pos = :e4)            
+            when i == 0 && player.color == :black
+              player.get(:f7, pos = :f5)
+            when i == 1 && player.color == :white
+              player.get(:d1, pos = :h5)
+            when i == 1 && player.color == :black
+              player.get(:g7, pos = :g6)
+            end
+            
+          @game.pick(piece)
+          player.move(piece, pos)
+          @game.place(piece)
+          
+          @game.update_moves(player)        
+        end
+      end
+      
+      @board.visualize 
+      @game.update_moves(@player_white)
+      
+      expect(@game.check?(queen_white)).to eq(false)         
+    end
+  end
 end
