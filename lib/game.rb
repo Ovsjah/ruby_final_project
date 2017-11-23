@@ -21,14 +21,15 @@ class Game
   end
   
   def play
-    setup
     
     loop do
 
       [player_white, player_black].each do |player|
       
+        setup
+        
         king = king(player)
-        update_moves(foe(player.color))
+
         update_moves(player)
        
         board.visualize
@@ -66,8 +67,8 @@ class Game
                
           remove_passant(player)
         end
-            
-        update_moves(player)
+        #p player.pieces.any? { |_key, piece| check?(piece) }
+        update_moves(foe(player.color))
         
         if king.check
       
@@ -80,7 +81,9 @@ class Game
             
             redo
           end
-        end     
+        end
+        
+        update_moves(player)  
       end
     end
   end 
@@ -116,17 +119,35 @@ class Game
   end
   
   
-  def update_moves(player)     
-    player.pieces.each do |key, piece|
-      
-      remove(player, piece, key)
-      
-      piece.update_moves
-      
+  def update_moves(player)
+    
+    player.pieces.each do |key, piece|      
+      piece.update_moves     
       adjust(piece)
+      
+      #p "#{piece.class}_#{piece.color}" if check?(piece)      
+    end
+
+  enemy_king(player.color).check = 
+    player.pieces.any? do |_key, piece|
+    
+      if check?(piece)
+        enemy_king(player.color).checked_from = piece.position
+      else
+        enemy_king(player.color).checked_from = nil
+      end
+      
     end
     
-    enemy_king(player.color).check = player.pieces.any? { |_key, piece| check?(piece) }
+    player.pieces.each do |key, piece|
+    
+      if enemy_king(player.color).check && piece.position == enemy_king(player.color).checked_from
+        remove(player, piece, key)
+      elsif !enemy_king(player.color).check
+        remove(player, piece, key)
+      end
+      
+    end
   end
   
   def adjust(piece)

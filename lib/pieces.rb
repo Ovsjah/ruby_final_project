@@ -132,11 +132,12 @@ module Pieces
   class King < Knight
     CHARS = {:white => [:e1, "\u2654"], :black => [:e8, "\u265a"]}
   
-    attr_accessor :color, :char, :check, :mate, :stalemate, :position, :possible_moves
+    attr_accessor :color, :char, :check, :checked_from, :mate, :stalemate, :position, :possible_moves
   
     def initialize(color, type)
       super
       @check = false
+      @checked_from = nil
       @mate = false
       @stalemate = false
     end
