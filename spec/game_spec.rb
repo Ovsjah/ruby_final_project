@@ -302,4 +302,84 @@ describe Game do
       expect(@game.check?(queen_white)).to eq(false)         
     end
   end
+  
+  describe '#stalemate?' do
+    it "returns true or false when stalemate" do
+    
+      king_black = @player_black.pieces[:king_e8]
+      
+      10.times do |i|
+        [@player_white, @player_black].each do |player|
+          @game.update_moves(player)       
+          piece =
+            case
+            when i == 0 && player.color == :white 
+              player.get(:e2, pos = :e3)            
+            when i == 0 && player.color == :black
+              player.get(:a7, pos = :a5)
+            when i == 1 && player.color == :white
+              player.get(:d1, pos = :h5)
+            when i == 1 && player.color == :black
+              player.get(:a8, pos = :a6)
+            when i == 2 && player.color == :white
+              player.get(:h5, pos = :a5)
+            when i == 2 && player.color == :black
+              player.get(:h7, pos = :h5)
+            when i == 3 && player.color == :white
+              player.get(:h2, pos = :h4)
+            when i == 3 && player.color == :black
+              player.get(:a6, pos = :h6)
+            when i == 4 && player.color == :white
+              player.get(:a5, pos = :c7)
+            when i == 4 && player.color == :black
+              player.get(:f7, pos = :f6)            
+            when i == 5 && player.color == :white
+              player.get(:c7, pos = :d7)
+            when i == 5 && player.color == :black
+              player.get(:e8, pos = :f7)
+            when i == 6 && player.color == :white
+              player.get(:d7, pos = :b7)
+            when i == 6 && player.color == :black
+              player.get(:d8, pos = :d3)
+            when i == 7 && player.color == :white
+              player.get(:b7, pos = :b8)
+            when i == 7 && player.color == :black
+              player.get(:d3, pos = :h7)
+            when i == 8 && player.color == :white
+              player.get(:b8, pos = :c8)
+            when i == 8 && player.color == :black
+              player.get(:f7, pos = :g6)
+            when i == 9 && player.color == :white
+              player.get(:c8, pos = :e6)
+            when i == 9 && player.color == :black
+              player.get(:f6, pos = :f5)
+            end
+                                                           
+          @game.pick(piece)
+          player.move(piece, pos)
+          @game.place(piece)
+          
+          @game.update_moves(@game.foe(player.color), false)
+          
+          if king_black.check
+            piece.possible_moves.delete_if { |move| move != king_black.checked_from }
+            
+            @game.update_moves(@game.foe(player.color), false)
+            
+            if king_black.check
+              @game.pick(piece)        
+              piece = player.move(piece, piece.prev_pos)
+              @game.place(piece)
+            end
+            
+            expect(@game.stalemate?(:white)).to eq(true)
+          end
+          
+          @game.update_moves(player)        
+        end
+      end
+      
+      @board.visualize 
+    end
+  end
 end

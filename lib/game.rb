@@ -23,56 +23,66 @@ class Game
   def play
     
     loop do
-
-      [player_white, player_black].each do |player|
       
+      [player_white, player_black].each do |player|
+              
         setup
+        #p "#{player.pieces[:queen_d1].possible_moves}" if player.color == :white
+        update_moves(player)
         
         king = king(player)
-
-        update_moves(player)
-       
+        
         board.visualize
         
         puts "#{player.color} turn"
-        
-        puts "Achtung! Check!" if king.check          
-        
+         
+        if king.stalemate
+          puts "Draw! Stalemate!"
+          exit(0)
+        elsif king.check
+          puts "Achtung! Check!"
+        end
+                
         print '>> '
         
         move = gets.split(/\s/)
         
         start, finish = move[0].to_sym, move[1].to_sym
         
-        piece = player.get(start, finish)
-        
+        begin
+          piece = player.get(start, finish)
+        rescue NoMethodError
+          puts "--> Enter a valid move! <--"
+          redo
+        end
+                
         pick(piece)
-        
         piece = player.move(piece, finish)
-        
         place(piece)
-        
-        if piece.class == Pawn
-        
+    
+        if piece.is_a? Pawn
+
+          unless piece.passant.is_a? Array
+            pick(piece.passant) if piece.position[0] == piece.passant.position[0]
+          end
+                  
           if piece.promote
             piece = pawn_promote(player, piece) 
             add(player, piece)
-          end
-          
-          if piece.class == Pawn
-            unless piece.passant.is_a? Array
-              pick(piece.passant) if piece.position[0] == piece.passant.position[0]
-            end
-          end        
+          end      
                
           remove_passant(player)
         end
-        #p player.pieces.any? { |_key, piece| check?(piece) }
-        update_moves(foe(player.color))
         
+        #p "#{piece.class}_#{piece.color} => #{piece.possible_moves}" if player.color == :black
+        
+        update_moves(foe(player.color), false)
+        #p "#{enemy_king(player.color).possible_moves}"
         if king.check
-      
-          update_moves(foe(player.color))
+          p king.checked_from
+          piece.possible_moves.delete_if { |move| move != king.checked_from }
+          p piece.possible_moves
+          update_moves(foe(player.color), false)
           
           if king.check
             pick(piece)        
@@ -119,25 +129,22 @@ class Game
   end
   
   
-  def update_moves(player)
+  def update_moves(player, passant = true)
     
     player.pieces.each do |key, piece|      
-      piece.update_moves     
-      adjust(piece)
+      piece.update_moves
+      adjust(piece, passant)
       
       #p "#{piece.class}_#{piece.color}" if check?(piece)      
     end
 
-  enemy_king(player.color).check = 
+    enemy_king(player.color).check =
+     
     player.pieces.any? do |_key, piece|
-    
-      if check?(piece)
-        enemy_king(player.color).checked_from = piece.position
-      else
-        enemy_king(player.color).checked_from = nil
-      end
-      
+      enemy_king(player.color).checked_from = check?(piece) ? piece.position : nil  
     end
+  
+    enemy_king(player.color).stalemate = stalemate?(player.color)
     
     player.pieces.each do |key, piece|
     
@@ -150,12 +157,13 @@ class Game
     end
   end
   
-  def adjust(piece)
+  def adjust(piece, passant)
     
     if piece.class == Pawn
       adjust_pawn_possible_moves(piece)
       adjust_pawn_taking(piece)
-      adjust_pawn_taking_en_passant(piece) if piece.taking_en_passant
+      adjust_pawn_taking_en_passant(piece) if piece.taking_en_passant && passant
+      #p "#{piece.class}_#{piece.position}_#{piece.color} => #{piece.possible_moves}"
     elsif piece.class == Knight
       adjust_knight_possible_moves(piece)
     else
@@ -184,7 +192,8 @@ class Game
   end
   
   def adjust_pawn_possible_moves(piece)
-    piece.possible_moves.delete_if { |move| board.hash_map[move].values[0] != "   " }
+    move = piece.possible_moves[0]
+    piece.possible_moves = [] if board.hash_map[move].values[0] != "   "
   end
   
   def adjust_pawn_taking(piece)
@@ -194,7 +203,9 @@ class Game
   end
   
   def adjust_pawn_taking_en_passant(piece)
-  
+    p piece.passant
+    piece.passant = [] unless piece.passant.is_a? Array
+    
     if piece.taking_en_passant && !piece.passant.empty?
     
       piece.passant = piece.passant.detect { |passant| piece.position[1] == passant.position[1] }
@@ -212,7 +223,7 @@ class Game
       end
     end    
     
-    if piece.taking_en_passant && (piece.passant.is_a? Array)
+    if piece.taking_en_passant && piece.passant.is_a?(Array)
       piece.taking_en_passant.each do |target|
         piece.passant << enemy_piece(target, piece.color) if cell_with_foe?(piece, target) 
       end
@@ -277,7 +288,19 @@ class Game
       piece.possible_moves.delete(move)
     end
     
-    #p "#{piece.class}_#{piece.color} => #{piece.possible_moves}"
+    if piece.class == King
+      foe(piece.color).pieces.each do |_key, enemy_piece|
+        piece.possible_moves.delete_if do |move|
+        
+          if enemy_piece.is_a? Pawn
+            enemy_piece.taking.include? move
+          else 
+            enemy_piece.possible_moves.include? move
+          end
+        end
+      end
+    end
+    #p "#{piece.class}_#{piece.color} => #{piece.possible_moves}" if piece.class == King && piece.color == :black
   end
   
   def pick_out(piece, pos, sym)
@@ -372,6 +395,10 @@ class Game
   def check?(piece)
     piece.possible_moves.include?(enemy_king(piece.color).position) 
   end  
+  
+  def stalemate?(color)
+    foe(color).pieces.all? { |_key, piece| piece.possible_moves == [] }
+  end
           
   def enemy_king(color)
     enemy = foe(color)
