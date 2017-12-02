@@ -352,33 +352,36 @@ describe Game do
             when i == 9 && player.color == :white
               player.get(:c8, pos = :e6)
             when i == 9 && player.color == :black
-              player.get(:f6, pos = :f5)
+              #player.get(:f6, pos = :f5)
+              break
             end
                                                            
           @game.pick(piece)
           player.move(piece, pos)
           @game.place(piece)
           
-          @game.update_moves(@game.foe(player.color), false)
+          #@game.update_moves(@game.foe(player.color), false)
           
-          if king_black.check
-            piece.possible_moves.delete_if { |move| move != king_black.checked_from }
+          #if king_black.check
+            #piece.possible_moves.delete_if { |move| move != king_black.checked_from }
             
-            @game.update_moves(@game.foe(player.color), false)
+            #@game.update_moves(@game.foe(player.color), false)
             
-            if king_black.check
-              @game.pick(piece)        
-              piece = player.move(piece, piece.prev_pos)
-              @game.place(piece)
-            end
+            #if king_black.check
+              #@game.pick(piece)        
+              #piece = player.move(piece, piece.prev_pos)
+              #@game.place(piece)
+            #end
             
-            expect(@game.stalemate?(:white)).to eq(true)
-          end
+            #expect(@game.stalemate?(:white)).to eq(true)
+          #end
           
           @game.update_moves(player)        
         end
       end
-      
+      #@game.update_moves(@player_black)
+      expect(@game.stalemate?(:white)).to eq(true)
+      #p @player_black.pieces
       @board.visualize 
     end
   end
