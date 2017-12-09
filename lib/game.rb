@@ -20,13 +20,14 @@ class Game
     end
   end
   
-  def play
+  def play  
+    
     setup
     
     loop do
       
       [player_white, player_black].each do |player|
-
+        
         update_moves(player)
         
         king = king(player.color)
@@ -34,12 +35,16 @@ class Game
         board.visualize
         
         puts "#{player.color} turn"
-
+        p "possible_moves => #{player.pieces[:queen_d8].possible_moves}" if player.color == :black
+        #p player_black.pieces
+        #if king.mate
+          #puts "#{(foe(player.color).color).capitalize} won!"
+          #exit(0)
         if king.stalemate
           puts "Draw! Stalemate!"
           exit(0)
         elsif king.check
-          puts "Achtung! Check!"
+          puts "Achtung! Check! Checked from #{king.checked_from}"
         end
                 
         print '>> '
@@ -58,7 +63,7 @@ class Game
         pick(piece)
         piece = player.move(piece, finish)
         place(piece)
-    
+        
         if piece.is_a? Pawn
 
           unless piece.passant.is_a? Array
@@ -72,21 +77,34 @@ class Game
                
           remove_passant(player)
         end
-
+        
+        remove_from_board(foe(player.color), enemy_king(player.color))
+        update_moves(foe(player.color), false)
+        
         if king.check
 
           update_moves(foe(player.color), false)
           
           if king.check
+            
             pick(piece)        
             piece = player.move(piece, piece.prev_pos)
+            
+            enemy_piece =
+              begin 
+                enemy_piece(piece.prev_pos, player.color)
+              rescue NoMethodError
+                nil
+              end
+              
             place(piece)
+            place(enemy_piece) unless enemy_piece.nil?
             
             redo
           end
         end
         
-        update_moves(player)  
+        update_moves(player)
       end
     end
   end 
@@ -121,6 +139,18 @@ class Game
     player.pieces.delete(key) if board.grid[coord[0]][coord[1]][1] != piece.char
   end
   
+  def remove_from_board(player, king)
+  
+    player.pieces.each do |key, piece|
+        
+      if king.check && piece.position == king.checked_from
+        remove(player, piece, key)
+      elsif !king.check
+        remove(player, piece, key)
+      end
+      
+    end
+  end
   
   def update_moves(player, passant = true)
     
@@ -129,26 +159,19 @@ class Game
       adjust(piece, passant)    
     end
     
+    enemy_king = enemy_king(player.color)
+    king = king(player.color) 
+    
     tied_piece(player)
     
-    enemy_king(player.color).check =
-     
-    player.pieces.any? do |_key, piece|
-      enemy_king(player.color).checked_from = check?(piece) ? piece.position : nil  
-    end
+    king.stalemate = stalemate?(player)
     
+    #king.mate = mate?(player)
     
-    king(player.color).stalemate = stalemate?(player)
-    
-    player.pieces.each do |key, piece|
-    
-      if enemy_king(player.color).check && piece.position == enemy_king(player.color).checked_from
-        remove(player, piece, key)
-      elsif !enemy_king(player.color).check
-        remove(player, piece, key)
+    enemy_king.check =    
+      player.pieces.any? do |_key, piece|
+        enemy_king.checked_from = check?(piece) ? piece.position : nil  
       end
-      
-    end
   end
   
   def adjust(piece, passant)
@@ -185,8 +208,15 @@ class Game
   end
   
   def adjust_pawn_possible_moves(piece)
-    move = piece.possible_moves[0]
-    piece.possible_moves = [] if board.hash_map[move].values[0] != "   "
+    piece.possible_moves.each_with_index do |move, idx|
+    
+      if  board.hash_map[move].values[0] != "   " && idx == 0
+        piece.possible_moves = []
+      elsif board.hash_map[move].values[0] != "   " && idx == 1
+        piece.possible_moves.delete(move)
+      end
+      
+    end
   end
   
   def adjust_pawn_taking(piece)
@@ -237,7 +267,7 @@ class Game
   
   def tied_piece(player)
     color = player.color
-  
+
     lines_with_king(color).each do |line|
 
       tied_pos = line[0].detect { |pos| pos != king(color).position }
@@ -253,6 +283,7 @@ class Game
     
     foe(color).pieces.each_with_object([]) do |pair, lines_with_king|
       enemy_piece = pair[1]
+      copy = enemy_piece.possible_moves
       enemy_piece.update_moves
       
       unless enemy_piece.is_a? Pawn
@@ -261,20 +292,32 @@ class Game
   
         lines_with_king << [line[1] , enemy_piece.position] unless line.nil? 
       end
+      
+      enemy_piece.possible_moves = copy
     end
   end
     
   def adjust_king_moves(piece)
+    lines_with_king = lines_with_king(piece.color)
+    
     foe(piece.color).pieces.each do |_key, enemy_piece|
+      
+      unless lines_with_king.any? { |line| line.include? enemy_piece.position }
+        copy = enemy_piece.possible_moves
+        enemy_piece.update_moves
+      end
+      
       piece.possible_moves.delete_if do |move|
         
         if enemy_piece.is_a? Pawn
           enemy_piece.taking.include? move
-        else 
-          enemy_piece.possible_moves.include? move
+        else          
+          enemy_piece.possible_moves.include?(move) || lines_with_king.any? { |line| line[0].include?(move) }
         end
         
       end
+
+      enemy_piece.possible_moves = copy unless copy.nil?
     end
   end
   
@@ -431,6 +474,13 @@ class Game
   
   def stalemate?(player)
     player.pieces.all? { |_key, piece| piece.possible_moves == [] }
+  end
+  
+  def mate?(player)
+    king = king(player.color)
+    #p up_left_diagonal?(king.checked_from, king.position) unless king.checked_from.nil?
+    king.check && king.possible_moves.empty? &&
+    player.pieces.none? { |_key, piece| piece.possible_moves.include?(king.checked_from) }
   end
           
   def enemy_king(color)

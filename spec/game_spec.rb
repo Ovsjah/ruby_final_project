@@ -101,7 +101,7 @@ describe Game do
       
       @board.visualize
       
-      expect(@game.adjust_pawn_possible_moves(piece_black_e)).to eq([])
+      expect(@game.adjust_pawn_possible_moves(piece_black_e)).to eq([:e4])
     end
   end
   
@@ -307,6 +307,7 @@ describe Game do
     it "returns true or false when stalemate" do
     
       king_black = @player_black.pieces[:king_e8]
+      king_white = @player_white.pieces[:king_e1]
       
       10.times do |i|
         [@player_white, @player_black].each do |player|
@@ -352,7 +353,6 @@ describe Game do
             when i == 9 && player.color == :white
               player.get(:c8, pos = :e6)
             when i == 9 && player.color == :black
-              #player.get(:f6, pos = :f5)
               break
             end
                                                            
@@ -360,28 +360,14 @@ describe Game do
           player.move(piece, pos)
           @game.place(piece)
           
-          #@game.update_moves(@game.foe(player.color), false)
-          
-          #if king_black.check
-            #piece.possible_moves.delete_if { |move| move != king_black.checked_from }
-            
-            #@game.update_moves(@game.foe(player.color), false)
-            
-            #if king_black.check
-              #@game.pick(piece)        
-              #piece = player.move(piece, piece.prev_pos)
-              #@game.place(piece)
-            #end
-            
-            #expect(@game.stalemate?(:white)).to eq(true)
-          #end
-          
-          @game.update_moves(player)        
+          @game.update_moves(player)
+          enemy_king = player.color == :white ? king_black : king_white
+          @game.remove_from_board(player, enemy_king)        
         end
       end
-      #@game.update_moves(@player_black)
-      expect(@game.stalemate?(:white)).to eq(true)
-      #p @player_black.pieces
+
+      expect(@game.stalemate?(@player_black)).to eq(true)
+      
       @board.visualize 
     end
   end

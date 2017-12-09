@@ -12,7 +12,7 @@ module Pieces
       @color = color
       @char = CHARS[color][-1]
       @position = CHARS[color][type]
-      @prev_pos = nil      
+      @prev_pos = nil
       @passant = []
       @possible_moves = update_moves 
     end
@@ -21,7 +21,7 @@ module Pieces
       a = position[0]
       b = position[1].to_i
     
-      @possible_moves = 
+      @possible_moves =
         case
         when char == '♟' && b == 7
           ["#{a}#{b - 1}".to_sym, "#{a}#{b - 2}".to_sym]
@@ -40,7 +40,7 @@ module Pieces
       b = position[1].to_i
       prev = (a.ord - 1).chr       
     
-      targets = 
+      targets =
         case
         when char == '♟' && a == 'a'
           ["#{a.next}#{b - 1}".to_sym]
@@ -81,7 +81,7 @@ module Pieces
 
     end
   
-    def promote  
+    def promote
       pieces = [
         'queen', 'rook',
         'knight', 'bishop'
@@ -120,12 +120,12 @@ module Pieces
         if alt[0] < 0
           "#{(a.ord - alt[0].abs).chr}#{b - alt[1]}".to_sym
         else
-          "#{(a.ord + alt[0].abs).chr}#{b - alt[1]}".to_sym 
+          "#{(a.ord + alt[0].abs).chr}#{b - alt[1]}".to_sym
         end
       end
     
       @possible_moves.delete_if { |move| move.size == 3 || !move[0].between?('a', 'h') || !move[1].between?('1', '8') }
-    end  
+    end
   end
 
 
@@ -161,7 +161,7 @@ module Pieces
     CHARS = {:white => [:c1, :f1, "\u2657"], :black => [:f8, :c8, "\u265d"]}
   
     def alts
-      (-7..7).to_a.repeated_permutation(2).select { |a, b| (a.abs == b.abs) && !(a == 0 && b == 0) } 
+      (-7..7).to_a.repeated_permutation(2).select { |a, b| (a.abs == b.abs) && !(a == 0 && b == 0) }
     end
   end
 
