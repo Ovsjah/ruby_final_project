@@ -105,6 +105,60 @@ describe Game do
     end
   end
   
+  describe '#up_left_diagonal?' do
+    it "returns true or false" do
+      expect(@game.up_left_diagonal?(:e2, :b5)).to eq(true)
+    end
+  end
+  
+  describe '#down_left_diagonal?' do
+    it "returns true or false" do
+      expect(@game.down_left_diagonal?(:f5, :c2)).to eq(true)
+    end
+  end
+  
+  describe '#up_right_diagonal?' do
+    it "returns true or false" do
+      expect(@game.up_right_diagonal?(:b4, :e7)).to eq(true)
+    end
+  end
+  
+  describe '#down_right_diagonal?' do
+    it "returns true or false" do
+      expect(@game.down_right_diagonal?(:c7, :g3)).to eq(true)
+    end
+  end
+
+  describe '#up?' do
+    it "returns true or false" do
+      expect(@game.up?(:c3, :c7)).to eq(true)
+    end
+  end
+  
+  describe '#down?' do
+    it "returns true or false" do
+      expect(@game.down?(:d5, :d2)).to eq(true)
+    end
+  end  
+
+  describe '#at_left?' do
+    it "returns true or false" do
+      expect(@game.at_left?(:f3, :b3)).to eq(true)
+    end
+  end
+  
+  describe '#at_right?' do
+    it "returns true or false" do
+      expect(@game.at_right?(:b4, :g4)).to eq(true)
+    end
+  end  
+  
+  describe '#cells_between' do
+    it "returns cells between start finish icluding finish" do
+      expect(@game.cells_between(:e2, :b5)).to eq([:d3, :c4, :b5])
+    end
+  end 
+  
   describe '#adjust_pawn_taking' do
     it "adds taking targets to pawn's possible_moves" do
       piece_white_d = nil
@@ -304,10 +358,7 @@ describe Game do
   end
   
   describe '#stalemate?' do
-    it "returns true or false when stalemate" do
-    
-      king_black = @player_black.pieces[:king_e8]
-      king_white = @player_white.pieces[:king_e1]
+    it "returns true when stalemate" do
       
       10.times do |i|
         [@player_white, @player_black].each do |player|
@@ -361,14 +412,110 @@ describe Game do
           @game.place(piece)
           
           @game.update_moves(player)
-          enemy_king = player.color == :white ? king_black : king_white
-          @game.remove_from_board(player, enemy_king)        
+          @game.remove_from_board(player)        
         end
       end
 
       expect(@game.stalemate?(@player_black)).to eq(true)
       
       @board.visualize 
+    end
+  end
+  
+  describe '#mate?' do
+    it "returns true when mate" do
+      5.times do |i|
+        [@player_white, @player_black].each do |player|
+          @game.update_moves(player)
+          piece =
+            case
+            when i == 0 && player.color == :white 
+              player.get(:e2, pos = :e4)            
+            when i == 0 && player.color == :black
+              player.get(:e7, pos = :e5)
+            when i == 1 && player.color == :white
+              player.get(:d1, pos = :h5)
+            when i == 1 && player.color == :black
+              player.get(:g8, pos = :f6)
+            when i == 2 && player.color == :white
+              player.get(:g1, pos = :f3)
+            when i == 2 && player.color == :black
+              player.get(:b8, pos = :c6)
+            when i == 3 && player.color == :white
+              player.get(:f3, pos = :g5)
+            when i == 3 && player.color == :black
+              player.get(:h7, pos = :h6)
+            when i == 4 && player.color == :white
+              player.get(:h5, pos = :f7)
+            when i == 4 && player.color == :black
+              break
+            end
+            
+          @game.pick(piece)
+          player.move(piece, pos)
+          @game.place(piece)
+          
+          @game.update_moves(player)
+          @game.remove_from_board(player)        
+        end
+      end
+      
+      expect(@game.mate?(@player_black)).to eq(true)
+      @board.visualize 
+    end
+  end
+  
+  describe '#castling' do
+    it "adds castling moves to king's possible moves" do
+      king_white = @player_white.pieces[:king_e1]
+      king_black = @player_black.pieces[:king_e8]
+      
+      6.times do |i|
+        [@player_white, @player_black].each do |player|
+          @game.update_moves(player)
+          piece =
+            case
+            when i == 0 && player.color == :white 
+              player.get(:e2, pos = :e4)            
+            when i == 0 && player.color == :black
+              player.get(:e7, pos = :e5)
+            when i == 1 && player.color == :white
+              player.get(:g1, pos = :f3)
+            when i == 1 && player.color == :black
+              player.get(:b8, pos = :c6)
+            when i == 2 && player.color == :white
+              player.get(:f1, pos = :c4)
+            when i == 2 && player.color == :black
+              player.get(:d7, pos = :d5)
+            when i == 3 && player.color == :white
+              expect(king_white.possible_moves.include? :g1).to eq(true)
+              player.get(:e1, pos = :g1)
+            when i == 3 && player.color == :black
+              player.get(:c8, pos = :e6)
+            when i == 4 && player.color == :white
+              player.get(:b1, pos = :c3)
+            when i == 4 && player.color == :black
+              player.get(:d8, pos = :h4)
+            when i == 5 && player.color == :white
+              player.get(:d1, pos = :e2)
+            when i == 5 && player.color == :black
+              expect(king_black.possible_moves.include? :c8).to eq(true)
+              player.get(:e8, pos = :c8)
+            end
+            
+          @game.pick(piece)
+          player.move(piece, pos)
+          @game.place(piece)
+          
+          if piece.class == Pieces::King && piece.moved == false
+            @game.castle_rook(player)
+          end
+          
+          @game.update_moves(player)        
+        end
+      end
+      
+      @board.visualize     
     end
   end
 end

@@ -132,16 +132,21 @@ module Pieces
   class King < Knight
     CHARS = {:white => [:e1, "\u2654"], :black => [:e8, "\u265a"]}
   
-    attr_accessor :color, :char, :check, :checked_from, :mate, :stalemate, :position, :possible_moves
+    attr_accessor :color, :char, :moved, :mate, :stalemate, :check, :checked_from, :position, :possible_moves
   
     def initialize(color, type)
       super
-      @check = false
-      @checked_from = nil
+      @moved = false
       @mate = false
       @stalemate = false
+      @check = false
+      @checked_from = nil
     end
-  
+    
+    def castling_moves
+      @color == :white ? [:c1, :g1] : [:c8, :g8]
+    end
+    
     def alts
       alts = [-1, 0, 0,  1].repeated_permutation(2).uniq.delete_if { |el| el == [0, 0] }
     end
@@ -168,7 +173,14 @@ module Pieces
 
   class Rook < Knight
     CHARS = {:white => [:a1, :h1, "\u2656"], :black => [:h8, :a8, "\u265c"]}
-  
+    
+    attr_accessor :moved
+    
+    def initialize(color, type)
+      super
+      @moved = false
+    end
+    
     def alts
       (-7..7).to_a.repeated_permutation(2).select { |a, b| (a == 0 || b == 0) && !(a == 0 && b == 0) }
     end
