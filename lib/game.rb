@@ -1,5 +1,7 @@
+require 'json'
 require './lib/factory'
 require './lib/game_helpers'
+require './lib/colorize'
 
 class Game
   extend Factory  
@@ -8,13 +10,92 @@ class Game
   
   attr_accessor :player_white, :player_black, :board
   
-  def initialize
+  def initialize(player_white = nil, player_black = nil)
     @board = Factory.create(:board)
-    @player_white = Factory.create(:player, {:name => 'Ovsjah', :color => :white})
-    @player_black = Factory.create(:player, {:name => 'Weasel', :color => :black})
+    
+    if player_white.nil? && player_black.nil?
+      @player_white = Factory.create(:player, {:name => nil, :color => :white})
+      @player_black = Factory.create(:player, {:name => nil, :color => :black})
+    else
+      @player_white = player_white
+      @player_black = player_black
+    end
+  end
+  
+  def save(player)
+
+    json = JSON.dump({
+      :player_white => player_white.name,
+      :player_black => player_black.name,
+      :turn => player.color,
+      :white_pieces => pieces_saver(player_white),
+      :black_pieces => pieces_saver(player_black)
+    })
+      
+    File.open("#{player_white.name.downcase}_vs_#{player_black.name.downcase}.dat", 'w') do |file|
+      file.write(json)
+    end
+    
+    puts "Game saved. Good bye!"
+    exit(0)
+  end
+  
+  def load_game(name_white, name_black)
+    data = File.read("#{name_white}_vs_#{name_black}.dat")
+    data = JSON.load(data)
+    
+    player_white.name = data["player_white"]
+    player_black.name = data["player_black"]
+    
+    turn = data["turn"].to_sym
+    
+    white_pieces = data["white_pieces"]
+    black_pieces = data["black_pieces"]
+    
+    pieces_loader(player_white, white_pieces)
+    pieces_loader(player_black, black_pieces)
+
+    Game.new(player_white, player_black).play(turn, false)
+  rescue Errno::ENOENT
+    puts "Sorry, you don't have any saved game!"
+  end
+  
+  def introduction
+    puts colorize("Hello, boys and girls, this is your old pal Stinky Wizzleteats. This is a game about a whale—no! This is a game about chess!", "1;31")
+    puts "If you wanna to load a game. Just type '#{colorize("LOAD", "30;46")} #{colorize("Player White Name", "1;37")} vs #{colorize("Player Black Name", "1;30")} or hit #{colorize("ENTER", "30;46")} to skip"
+    print '>> '
+    
+    response = gets.split(/\s/)
+    response.each { |word| word.downcase }
+    
+    if response.include? 'load'
+      load_game(response[1], response[-1])
+    else
+      "So... You don't want to load a game."
+    end
+      
+    puts "'QUIT' to quit a game"
+    
+    puts colorize("That's right! So enter your name for WHITE PLAYER!", "1;31") 
+    print '>> '
+    response_one = gets.chomp
+    
+    puts colorize("That's right! Now enter your name for BLACK PLAYER!", "1;31")
+    print '>> '
+    response_two = gets.chomp
+    
+    if response_one.upcase == 'QUIT' || response_two.upcase == 'QUIT'
+      puts "Good bye!"
+      exit(0)
+    else
+      player_white.name = response_one
+      player_black.name = response_two
+    end
   end
   
   def setup
+    puts colorize("The game of chess started! Happy happy joy joy!", "1;31")
+     
     [player_white, player_black].each do |player|
       player.pieces.each do |key, piece|
         place(piece)
@@ -22,44 +103,54 @@ class Game
     end
   end
   
-  def play  
+  def play(turn = nil, intro = true)
+    
+    introduction if intro
     
     setup
     
     loop do
+      flag = false
       
       [player_white, player_black].each do |player|
         
-        update_moves(player)
+        update_moves(player) unless flag
         
-        king = king(player.color)
+        if player.color != turn && !turn.nil?
+          turn = nil
+          next
+        end
+        
+        king = king(player.color)      
         
         board.visualize
         
-        puts "#{player.color} turn"
+        puts "Enter #{colorize('SAVE', "30;46")} to save and quit"
+        puts "Enter #{colorize('QUIT', "30;46")} to quit without saving"
         
-        p "possible_moves => #{player.pieces[:king_e1].possible_moves}" if player.color == :white
-        p "possible_moves => #{player.pieces[:king_e8].possible_moves}" if player.color == :black
-        
-        if king.mate
-          puts "#{(foe(player.color).color).capitalize} won! Mate!"
-          exit(0)
-        elsif king.stalemate
-          puts "Draw! Stalemate!"
-          exit(0)
-        elsif king.check
-          puts "Achtung! Check! Checked from #{king.checked_from}"
+        if player.color == :white
+          puts "#{colorize("white turn", "1;37;40")} turn"
+        else
+          puts "#{colorize("black turn", "1;30;40")} turn"
         end
+        
+        exit(0) if game_over?(king)
                 
         print '>> '
         
         move = gets.split(/\s/)
         
-        start, finish = move[0].to_sym, move[1].to_sym
+        if move[0].nil? || move[0].upcase == 'QUIT'
+          puts colorize("Are you happy enough! Come on in again, pal!", "1;31")
+          exit(0)
+        elsif move[0].upcase == 'SAVE'
+          save(player)
+        end       
         
         begin
+          start, finish = move[0].to_sym, move[1].to_sym
           piece = player.get(start, finish)
-        rescue NoMethodError
+        rescue NoMethodError => flag
           puts "--> Enter a valid move! <--"
           redo
         end
@@ -78,14 +169,14 @@ class Game
 
           unless piece.passant.is_a? Array
             pick(piece.passant) if piece.position[0] == piece.passant.position[0]
+            remove_from_board(foe(player.color))
+            remove_passant(player)
           end
                   
           if piece.promote
             piece = pawn_promote(player, piece) 
             add(player, piece)
           end      
-               
-          remove_passant(player)
         end
         
         if king.check && piece.position == king.checked_from
@@ -110,7 +201,7 @@ class Game
               
           place(piece)
           place(enemy_piece) unless enemy_piece.nil?
-            
+          flag = true  
           redo
         end
         
@@ -177,7 +268,7 @@ class Game
   
   def adjust_tied_pieces_possible_moves(tied_pieces)
     tied_pieces.each do |pos, tied_piece|
-      #p "pos => #{pos} | tied_piece => #{tied_piece}"
+
       if tied_piece.is_a? Pawn
         cells_between = cells_between(tied_piece.position, pos)
         tied_piece.possible_moves.keep_if { |move| cells_between.include? move }

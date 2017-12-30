@@ -8,10 +8,16 @@ module Pieces
         
     attr_accessor :color, :char, :position, :prev_pos, :passant, :possible_moves
   
-    def initialize(color, type)
+    def initialize(color, type, position = nil)
       @color = color
       @char = CHARS[color][-1]
-      @position = CHARS[color][type]
+      
+      if position.nil?
+        @position = CHARS[color][type]
+      else
+        @position = position
+      end
+      
       @prev_pos = nil
       @passant = []
       @possible_moves = update_moves 
@@ -99,10 +105,16 @@ module Pieces
   
     attr_accessor :color, :char, :position, :prev_pos, :possible_moves
   
-    def initialize(color, type)
+    def initialize(color, type, position = nil)
       @color = color
       @char = self.class::CHARS[color][-1]
-      @position = self.class::CHARS[color][type]
+      
+      if position.nil?
+        @position = self.class::CHARS[color][type]
+      else
+        @position = position
+      end
+      
       @prev_pos = nil  
       @possible_moves = update_moves
     end
@@ -134,7 +146,7 @@ module Pieces
   
     attr_accessor :color, :char, :moved, :mate, :stalemate, :check, :checked_from, :position, :possible_moves
   
-    def initialize(color, type)
+    def initialize(color, type, position = nil)
       super
       @moved = false
       @mate = false
@@ -176,7 +188,7 @@ module Pieces
     
     attr_accessor :moved
     
-    def initialize(color, type)
+    def initialize(color, type, position = nil)
       super
       @moved = false
     end

@@ -73,6 +73,19 @@ module GameHelpers
     foe(color).pieces.none? { |_k, p| p.possible_moves.include?(f) || p.possible_moves.include?(g) }
   end
 
+  def game_over?(king)
+    if king.mate
+      puts "#{(foe(king.color).color).capitalize} won! Mate!"
+      true
+    elsif king.stalemate
+      puts "Draw! Stalemate!"
+      true
+    elsif king.check
+      puts "Achtung! Check! Checked from #{king.checked_from}"
+      false
+    end   
+  end
+
   def check?(piece)
     piece.possible_moves.include?(enemy_king(piece.color).position) 
   end  
@@ -138,7 +151,7 @@ module GameHelpers
     
     coord = board.hash_map[piece.position].keys[0]
 
-   p player.pieces.delete(key) if board.grid[coord[0]][coord[1]][1] != piece.char
+    player.pieces.delete(key) if board.grid[coord[0]][coord[1]][1] != piece.char
   end
   
   def remove_from_board(player)  
@@ -215,5 +228,39 @@ module GameHelpers
   
   def black?(target)
     ('a'..'f').include? board.hash_map[target].values[0][1].ord.to_s(16)[3]
-  end 
+  end
+  
+  def pieces_saver(player)
+    player.pieces.each_with_object({}) do |piece, pieces|
+      if piece[1].class == Pieces::Pawn && piece[1].passant.class == Pieces::Pawn       
+        pieces[piece[0]] = [piece[1].position, piece[1].passant.position]
+      elsif (piece[1].class == Pieces::King || piece[1].class == Pieces::Rook) && piece[1].moved
+        pieces[piece[0]] = [piece[1].position, piece[1].moved]
+      else
+        pieces[piece[0]] = piece[1].position
+      end
+    end
+  end
+  
+  def pieces_loader(player, pieces)
+    diff = player.pieces.keys - pieces.keys.map(&:to_sym)
+    diff.each { |item| player.pieces.delete(item) }
+    
+    pieces.each do |k, v|
+      piece = player.pieces[k.to_sym]
+      if v.is_a? Array        
+        piece.position = v[0].to_sym
+        if piece.class == Pieces::Pawn
+          passant_position = v[1].to_sym
+          passant = foe(player.color).pieces.detect { |_k, p| p.possible_moves.include? passant_position }[1]
+          p passant
+          piece.passant = [passant]
+        elsif piece.class == Pieces::King || piece.class == Pieces::Rook
+          piece.moved = v[1]
+        end
+      else
+        piece.position = v.to_sym
+      end
+    end
+  end
 end

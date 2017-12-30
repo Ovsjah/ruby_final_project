@@ -1,3 +1,5 @@
+require './lib/colorize'
+
 class Board
   attr_accessor :grid
   
@@ -19,10 +21,6 @@ class Board
     
     res
   end
-  
-  def colorize(text, color_code)
-    "\e[#{color_code}m#{text}\e[0m"
-  end        
   
   def visualize
     puts %q{
