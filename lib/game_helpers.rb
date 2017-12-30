@@ -15,13 +15,13 @@ module GameHelpers
     left_rook = player.pieces[:rook_a1] || player.pieces[:rook_a8]
     right_rook = player.pieces[:rook_h1] || player.pieces[:rook_h8]
     
-    if king.moved == false && left_rook.moved == false && !king.check
+    if left_rook && king.moved == false && left_rook.moved == false && !king.check
       if west_side?(player.color)
         king.possible_moves << king.castling_moves[0]
       end
     end
     
-    if king.moved == false && right_rook.moved == false && !king.check
+    if right_rook && king.moved == false && right_rook.moved == false && !king.check
       if east_side?(player.color)
         king.possible_moves << king.castling_moves[1]
       end
@@ -138,7 +138,7 @@ module GameHelpers
   
   def add(player, piece)
     name = piece.class.to_s.downcase
-    name.delete!("pieces::") if name.include? "pieces::"
+    name = name[8..-1] if name.include? "pieces::"
     name = "#{name}_#{piece.position}".to_sym
     player.pieces[name] = piece
   end
@@ -244,7 +244,14 @@ module GameHelpers
   
   def pieces_loader(player, pieces)
     diff = player.pieces.keys - pieces.keys.map(&:to_sym)
+    new_pieces = pieces.keys.map(&:to_sym) - player.pieces.keys
     diff.each { |item| player.pieces.delete(item) }
+    
+    new_pieces.each do |key|
+      new_piece = Factory.create(key[0..-4].to_sym, {:color => player.color, :type => 0})
+      new_piece.position = pieces[key.to_s].to_sym
+      place(new_piece)
+    end
     
     pieces.each do |k, v|
       piece = player.pieces[k.to_sym]
@@ -259,7 +266,7 @@ module GameHelpers
           piece.moved = v[1]
         end
       else
-        piece.position = v.to_sym
+        piece.position = v.to_sym unless piece.nil?
       end
     end
   end

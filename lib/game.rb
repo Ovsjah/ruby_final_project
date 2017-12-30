@@ -56,7 +56,7 @@ class Game
   
   def introduction
     puts colorize("Hello, boys and girls, this is your old pal Stinky Wizzleteats. This is a game about a whale—no! This is a game about chess!", "1;31")
-    puts "If you wanna to load a game. Just type '#{colorize("LOAD", "30;46")} #{colorize("Player White Name", "1;37")} vs #{colorize("Player Black Name", "1;30")} or hit #{colorize("ENTER", "30;46")} to skip"
+    puts "If you wanna to load a game. Just type '#{colorize("LOAD", "30;46")} #{colorize("Player White Name", "1;37")} vs #{colorize("Player Black Name", "1;30")}' or hit #{colorize("ENTER", "30;46")} to skip"
     print '>> '
     
     response = gets.split(/\s/)
