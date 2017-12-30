@@ -10,16 +10,10 @@ class Game
   
   attr_accessor :player_white, :player_black, :board
   
-  def initialize(player_white = nil, player_black = nil)
+  def initialize
     @board = Factory.create(:board)
-    
-    if player_white.nil? && player_black.nil?
-      @player_white = Factory.create(:player, {:name => nil, :color => :white})
-      @player_black = Factory.create(:player, {:name => nil, :color => :black})
-    else
-      @player_white = player_white
-      @player_black = player_black
-    end
+    @player_white = Factory.create(:player, {:name => nil, :color => :white})
+    @player_black = Factory.create(:player, {:name => nil, :color => :black})
   end
   
   def save(player)
@@ -55,7 +49,7 @@ class Game
     pieces_loader(player_white, white_pieces)
     pieces_loader(player_black, black_pieces)
 
-    Game.new(player_white, player_black).play(turn, false)
+    play(turn, false)
   rescue Errno::ENOENT
     puts "Sorry, you don't have any saved game!"
   end

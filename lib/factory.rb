@@ -23,7 +23,7 @@ module Factory
     elsif component == :player
       COMPONENTS[component].new(options[:name], options[:color])
     else
-      COMPONENTS[component].new(options[:color], options[:type], options[:pos] = nil)
+      COMPONENTS[component].new(options[:color], options[:type])
     end
     
   end
