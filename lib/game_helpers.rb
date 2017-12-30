@@ -251,6 +251,7 @@ module GameHelpers
       new_piece = Factory.create(key[0..-4].to_sym, {:color => player.color, :type => 0})
       new_piece.position = pieces[key.to_s].to_sym
       place(new_piece)
+      add(player, new_piece)
     end
     
     pieces.each do |k, v|

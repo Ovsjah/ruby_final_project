@@ -113,6 +113,8 @@ class Game
         if player.color != turn && !turn.nil?
           turn = nil
           next
+        else
+          turn = nil
         end
         
         king = king(player.color)      
