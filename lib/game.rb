@@ -170,7 +170,16 @@ class Game
           end
                   
           if piece.promote
-            piece = pawn_promote(player, piece) 
+            new = false
+            
+            until new
+              begin
+                piece = pawn_promote(player, piece)
+              rescue NoMethodError => new
+                redo
+              end
+            end
+            
             add(player, piece)
           end      
         end
@@ -244,8 +253,12 @@ class Game
     puts "Choose the piece to promote the pawn to.\n #{piece.promote}"
       
     print '>> '
+
+    response = gets.chomp
     
-    choice = gets.chomp.to_sym
+    if piece.promote.include?(response)
+      choice = response.chomp.to_sym
+    end
     
     new_piece = Factory.create(choice, {:color => player.color, :type => 0})
     
