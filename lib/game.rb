@@ -4,7 +4,6 @@ require './lib/game_helpers'
 require './lib/colorize'
 
 class Game
-  extend Factory  
   include Pieces  
   include GameHelpers
   
