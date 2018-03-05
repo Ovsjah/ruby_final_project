@@ -4,12 +4,7 @@ require './lib/game_helpers'
 require './lib/colorize'
 
 class Game
-<<<<<<< HEAD
-  #extend Factory  
-  include Pieces
-=======
   include Pieces  
->>>>>>> dc7c16003a01ec074304f3d1df06417594c97232
   include GameHelpers
   
   attr_accessor :player_white, :player_black, :board
