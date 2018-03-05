@@ -57,20 +57,26 @@ module GameHelpers
   end
   
   def west_side?(color)
-    b, c, d = color == :white ? [:b1, :c1, :d1] : [:b8, :c8, :d8]
-  
-    board.hash_map[b].values[0] == "   " &&
-    board.hash_map[c].values[0] == "   " && 
-    board.hash_map[d].values[0] == "   " &&
-    foe(color).pieces.none? { |_k, p| p.possible_moves.include?(d) || p.possible_moves.include?(c) }
+    c, d = color == :white ? [:c1, :d1] : [:c8, :d8]
+    include_castling_moves?(color, c, d)
   end
   
   def east_side?(color)
     f, g = color == :white ? [:f1, :g1] : [:f8, :g8]
-    
-    board.hash_map[f].values[0] == "   " &&
-    board.hash_map[g].values[0] == "   " &&
-    foe(color).pieces.none? { |_k, p| p.possible_moves.include?(f) || p.possible_moves.include?(g) }
+    include_castling_moves?(color, f, g)
+  end
+
+  def include_castling_moves?(color, cell_a, cell_b)
+  
+    board.hash_map[cell_a].values[0] == "   " && 
+    board.hash_map[cell_b].values[0] == "   " &&
+    foe(color).pieces.none? do |_k, p|
+      if p.class == Pieces::Pawn
+        p.taking.include?(cell_a) || p.taking.include?(cell_b)
+      else 
+        p.possible_moves.include?(cell_a) || p.possible_moves.include?(cell_b)
+      end
+    end
   end
 
   def game_over?(king)

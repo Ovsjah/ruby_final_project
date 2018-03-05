@@ -517,5 +517,54 @@ describe Game do
       
       @board.visualize     
     end
+    
+    context "when king castles to the checked position" do
+      it "won't add castling moves to king's possible moves" do
+        king_white = @player_white.pieces[:king_e1]
+        king_black = @player_black.pieces[:king_e8]
+      
+        5.times do |i|
+          [@player_white, @player_black].each do |player|
+            @game.update_moves(player)
+            piece =
+              case
+              when i == 0 && player.color == :white 
+                player.get(:e2, pos = :e4)            
+              when i == 0 && player.color == :black
+                player.get(:f7, pos = :f5)
+              when i == 1 && player.color == :white
+                player.get(:e4, pos = :f5)
+              when i == 1 && player.color == :black
+                player.get(:g7, pos = :g5)
+              when i == 2 && player.color == :white
+                player.get(:f5, pos = :g6)
+              when i == 2 && player.color == :black
+                player.get(:g8, pos = :f6)
+              when i == 3 && player.color == :white
+                player.get(:g6, pos = :h7)
+              when i == 3 && player.color == :black
+                player.get(:f8, pos = :h6)
+              when i == 4 && player.color == :white
+                player.get(:g1, pos = :f3)
+              when i == 4 && player.color == :black
+                expect(king_black.possible_moves.include? :g8).to eq(false)
+                break
+              end
+            
+            @game.pick(piece)
+            player.move(piece, pos)
+            @game.place(piece)
+          
+            #if piece.class == Pieces::King && piece.moved == false
+              #@game.castle_rook(player)
+            #end
+          
+            @game.update_moves(player)        
+          end
+        end
+      
+        @board.visualize
+      end
+    end
   end
 end

@@ -4,8 +4,8 @@ require './lib/game_helpers'
 require './lib/colorize'
 
 class Game
-  extend Factory  
-  include Pieces  
+  #extend Factory  
+  include Pieces
   include GameHelpers
   
   attr_accessor :player_white, :player_black, :board
@@ -194,7 +194,9 @@ class Game
           
         if king.check
             
-          pick(piece)        
+          pick(piece)
+          p piece.position
+          p piece.moved       
           piece = player.move(piece, piece.prev_pos)
             
           enemy_piece =
@@ -327,17 +329,17 @@ class Game
       else
         piece.passant = []
       end
-    end    
+    end
     
     if piece.taking_en_passant && piece.passant.is_a?(Array)
       piece.taking_en_passant.each do |target|
-        piece.passant << enemy_piece(target, piece.color) if cell_with_foe?(piece, target) 
+        piece.passant << enemy_piece(target, piece.color) if cell_with_foe?(piece, target)
       end
     end
   end
   
   def adjust_knight_possible_moves(piece)
-    piece.possible_moves.delete_if do |move| 
+    piece.possible_moves.delete_if do |move|
       cell_with_friend?(piece, move)
     end
   end
